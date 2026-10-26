@@ -578,13 +578,17 @@ async function tunerStart(){
   if(!navigator.mediaDevices){$("#tState").textContent="Micro indisponible ici. Ouvre l'appli depuis son adresse GitHub pour utiliser l'accordeur.";return}
   try{const c=ac();tun.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
     const src=c.createMediaStreamSource(tun.stream);tun.an=c.createAnalyser();tun.an.fftSize=2048;src.connect(tun.an);tun.buf=new Float32Array(2048);tun.sr=c.sampleRate;
-    tun.on=true;tun.trace=[];tun.hist=[];tun.stats={in:0,hi:0,lo:0};tun.t0=performance.now();$("#tunerBtn").textContent="Arrêter";$("#tState").textContent="Fais « mmm » sur ta note.";requestAnimationFrame(tunerLoop)}
+    tun.on=true;tun.trace=[];tun.hist=[];tun.ref=anchor()!=null?hzOf(anchor()):null;tun.jump=0;tun.stats={in:0,hi:0,lo:0};tun.t0=performance.now();$("#tunerBtn").textContent="Arrêter";$("#tState").textContent="Fais « mmm » sur ta note.";requestAnimationFrame(tunerLoop)}
   catch(e){$("#tState").textContent="Le micro est bloqué. Autorise-le dans les réglages du navigateur (ou ouvre l'appli depuis son adresse GitHub)."}}
 function tunerStop(){tun.on=false;if(tun.stream)tun.stream.getTracks().forEach(t=>t.stop());$("#tunerBtn").textContent="Activer le micro";
   const tot=tun.stats.in+tun.stats.hi+tun.stats.lo;if(tot>40){addHist({type:"note",target:anchor()!=null?noteName(anchor()):null,prox:Math.round(tun.stats.in/tot*100)})}}
 function tunerLoop(now){if(!tun.on)return;requestAnimationFrame(tunerLoop);if(now-tun.last<45)return;tun.last=now;
   tun.an.getFloatTimeDomainData(tun.buf);let hz=detect(tun.buf,tun.sr);
-  if(hz){tun.hist.push(hz);if(tun.hist.length>3)tun.hist.shift();hz=tun.hist.slice().sort((a,b)=>a-b)[Math.floor(tun.hist.length/2)]}else tun.hist=[];
+  // corrige les sauts d'octave et ignore les accrocs brefs (début et fin de son)
+  if(hz&&tun.ref){const d=st(hz,tun.ref);if(Math.abs(d-12)<1.5)hz/=2;else if(Math.abs(d+12)<1.5)hz*=2}
+  if(hz&&tun.ref&&Math.abs(st(hz,tun.ref))>6){tun.jump=(tun.jump||0)+1;if(tun.jump<5)hz=null;else{tun.ref=hz;tun.jump=0}}else if(hz)tun.jump=0;
+  if(hz){tun.hist.push(hz);if(tun.hist.length>5)tun.hist.shift();hz=tun.hist.slice().sort((a,b)=>a-b)[Math.floor(tun.hist.length/2)];tun.ref=tun.ref?tun.ref*0.8+hz*0.2:hz;tun.miss=0}
+  else{tun.hist=[];tun.miss=(tun.miss||0)+1;if(tun.miss>20)tun.ref=null}
   const t=(now-tun.t0)/1000;tun.trace.push([t,hz]);while(tun.trace.length&&tun.trace[0][0]<t-8)tun.trace.shift();
   const a=anchor()!=null?anchor():(noteBase()?noteBase().rec:null);
   if(hz){const m=midiOf(hz);$("#tNote").textContent=noteName(Math.round(m))+" · "+Math.round(hz)+" Hz";
