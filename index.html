@@ -14,11 +14,11 @@
 </head>
 <body>
 <style>
-/* Layout: une colonne d'entraînement, onglets en haut, un outil par écran */
+/* Layout : une colonne, onglets en haut, chaque onglet = un geste (connaître, basculer, vérifier) */
 :root{
   --bg:#F1EFF5; --surface:#FBFAFD; --ink:#1E1A2B; --muted:#625B74; --line:#DCD7E6;
   --accent:#4A3A8C; --accent-soft:#E4DFF4; --warm:#C8603A; --warm-soft:#F6E2D8;
-  --good:#2F7A55; --warn:#A8661A;
+  --good:#2F7A55; --good-soft:#DDEFE5; --warn:#A8661A;
   --display:"Young Serif",Georgia,"Times New Roman",serif;
   --body:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
@@ -26,342 +26,272 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#14111C; --surface:#1D1928; --ink:#ECE8F4; --muted:#A49DB6; --line:#332D42;
   --accent:#A99CF0; --accent-soft:#2B2545; --warm:#EE9572; --warm-soft:#3A2620;
-  --good:#6CC896; --warn:#E3A85A; color-scheme:dark}}
+  --good:#6CC896; --good-soft:#1F3328; --warn:#E3A85A; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#14111C; --surface:#1D1928; --ink:#ECE8F4; --muted:#A49DB6; --line:#332D42;
   --accent:#A99CF0; --accent-soft:#2B2545; --warm:#EE9572; --warm-soft:#3A2620;
-  --good:#6CC896; --warn:#E3A85A; color-scheme:dark}
+  --good:#6CC896; --good-soft:#1F3328; --warn:#E3A85A; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
-.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
-header h1{font-family:var(--display);font-weight:400;font-size:2.1rem;line-height:1.1;margin:0;text-wrap:balance}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+header h1{font-family:var(--display);font-weight:400;font-size:2.1rem;line-height:1.1;margin:0}
 header p{color:var(--muted);margin:6px 0 0}
 nav{display:flex;gap:6px;overflow-x:auto;margin:18px 0 20px;padding-bottom:4px;scrollbar-width:none}
 nav button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 .92rem var(--body);padding:8px 14px;border-radius:999px;cursor:pointer}
 nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
-button:focus-visible,input:focus-visible,label:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-h2{font-family:var(--display);font-weight:400;font-size:1.45rem;margin:0 0 6px}
-h3{font-size:1rem;margin:0 0 4px;font-weight:600}
-.lead{color:var(--muted);margin:0 0 18px;max-width:60ch}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+button:focus-visible,select:focus-visible,input:focus-visible,label:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h2{font-family:var(--display);font-weight:400;font-size:1.45rem;margin:0 0 6px;text-wrap:balance}
+h3{font-size:1.02rem;margin:0;font-weight:600}
+.lead{color:var(--muted);margin:0;max-width:60ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
 .stack{display:flex;flex-direction:column;gap:14px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;padding:12px 18px;font:600 1rem var(--body);cursor:pointer;background:var(--accent);color:var(--surface)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;padding:11px 16px;font:600 .98rem var(--body);cursor:pointer;background:var(--accent);color:var(--surface);text-decoration:none}
 .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 .btn.warm{background:var(--warm);color:var(--surface)}
-.btn:disabled{opacity:.5;cursor:default}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn.small{padding:7px 12px;font-size:.88rem}
+.btn:disabled{opacity:.45;cursor:default}
 .eyebrow{font:500 .72rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
-.small{font-size:.88rem;color:var(--muted)}
-/* Séance */
-.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.steps li{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
-.steps li:last-child{border-bottom:0}
-.steps input{width:22px;height:22px;accent-color:var(--accent)}
-.steps .t{min-width:0}
-.steps .d{font-family:var(--mono);font-size:.85rem;color:var(--muted)}
-.steps button.link{background:none;border:0;color:var(--accent);font:500 .9rem var(--body);cursor:pointer;padding:0}
-.streak{display:flex;gap:18px;flex-wrap:wrap}
-.streak div{display:flex;flex-direction:column}
-.streak b{font-family:var(--display);font-weight:400;font-size:1.8rem}
-/* Respiration */
-.breath{display:grid;place-items:center;padding:20px 0}
-.orb{width:min(220px,60vw);aspect-ratio:1;max-width:100%;border-radius:50%;background:radial-gradient(circle at 40% 35%,var(--accent-soft),var(--accent));display:grid;place-items:center;transform:scale(.6);transition:transform 4s ease-in-out}
-.orb span{color:var(--surface);font:600 1.15rem var(--body);text-align:center}
-.phase{font-family:var(--display);font-size:1.3rem;margin-top:16px;min-height:1.6em}
-/* Résonance */
-.cards{display:grid;gap:12px}
-.ex{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
-.ex p{margin:0;color:var(--muted)}
-.ex .row{justify-content:space-between}
-.timer{font-family:var(--mono);font-size:1.1rem}
-/* Analyse */
-.readtext{font-family:var(--display);font-size:1.12rem;line-height:1.65;margin:0}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.seg button{border:0;background:var(--surface);color:var(--ink);padding:8px 14px;font:500 .9rem var(--body);cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.small{font-size:.88rem;color:var(--muted);margin:0}
+.err{color:var(--warm);font-size:.9rem;margin:0}
+select{font:500 .95rem var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;max-width:100%}
+input[type=text]{font:500 .95rem var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-width:0;flex:1}
+.key{background:var(--accent-soft);border-radius:14px;padding:16px}
+.key p{margin:6px 0 0}
+.key ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.role{display:inline-block;font:600 .7rem var(--body);letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.role.cible{background:var(--good-soft);color:var(--good)}
+.role.garder{background:var(--accent-soft);color:var(--accent)}
+.role.apaiser{background:var(--warm-soft);color:var(--warm)}
+.role.modele{background:var(--ink);color:var(--surface)}
+details.voice{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+details.voice>summary{list-style:none;cursor:pointer;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+details.voice>summary::-webkit-details-marker{display:none}
+details.voice .vbody{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+.vsum{grid-column:1/-1;font-size:.86rem;color:var(--muted)}
+.vname{font-weight:600}
+.readtext{font-family:var(--display);font-size:1.05rem;line-height:1.6;margin:0}
+.mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.mini div{border:1px solid var(--line);border-radius:10px;padding:8px;min-width:0}
+.mini b{display:block;font-family:var(--mono);font-weight:500;font-size:1rem}
+.mini small{color:var(--muted);font-size:.72rem;line-height:1.2;display:block}
+@media (max-width:420px){.mini{grid-template-columns:repeat(2,minmax(0,1fr))}}
+canvas.map{width:100%;height:300px;display:block}
+canvas.pitch{width:100%;height:150px;display:block}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.insights{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px}
 .rec-dot{width:10px;height:10px;border-radius:50%;background:var(--warm);animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.25}}
-.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.metric{border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
-.metric b{display:block;font-family:var(--mono);font-size:1.35rem;font-weight:500}
-.metric small{color:var(--muted)}
-.chip{display:inline-block;font:600 .72rem var(--body);padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle}
-.chip.ok{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
-.chip.mid{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
-canvas.pitch{width:100%;height:180px;display:block}
-.tips{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
-.demo-flag{background:var(--warm-soft);color:var(--warm);font:600 .78rem var(--body);padding:4px 10px;border-radius:999px;display:inline-block}
-table{width:100%;border-collapse:collapse;font-size:.9rem}
-th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
-th{font-weight:500;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
-.tablebox{overflow-x:auto}
-audio{width:100%}
-.err{color:var(--warm);font-size:.92rem}
-/* Roulette */
-.wheelbox{position:relative;width:min(320px,100%);margin:0 auto}
-.wheelbox canvas{width:100%;aspect-ratio:1;display:block}
-.pointer{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:22px solid var(--ink)}
-.prompt{font-family:var(--display);font-size:1.4rem;line-height:1.3;margin:4px 0 0;text-wrap:balance}
-.constraint{background:var(--warm-soft);color:var(--warm);border-radius:10px;padding:10px 12px;font-weight:500}
-.ring{font-family:var(--mono);font-size:2.4rem;text-align:center}
-.durations button{min-width:56px}
-.chip.bad{background:var(--warm-soft);color:var(--warm)}
-.goal{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
-.scorebox{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:stretch}
-.scorecell{display:flex;flex-direction:column;gap:2px;padding-right:14px;border-right:1px solid var(--line)}
-.bigscore{font-size:2.6rem;font-weight:500;line-height:1}
-.bigscore small{font-size:1rem;color:var(--muted)}
-.prio{background:var(--accent-soft);border-radius:12px;padding:12px 14px;min-width:0}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.prox{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.prox b{font-family:var(--mono);font-size:2.4rem;font-weight:500;line-height:1}
+.prio{background:var(--accent-soft);border-radius:12px;padding:12px 14px}
 .prio p{margin:4px 0 0;font-weight:500}
-.zone{margin:0}
-.tagchip{display:inline-block;font:600 .7rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--warm);background:var(--warm-soft);padding:2px 8px;border-radius:999px;align-self:flex-start}
-@media (max-width:420px){.scorebox{grid-template-columns:1fr}.scorecell{border-right:0;padding-right:0}}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+th{font-weight:500;color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.06em}
+.tablebox{overflow-x:auto}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:110px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:.9rem}
+.bar .track{height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar .fill{height:100%;border-radius:999px;background:var(--accent);display:block}
+.bar.top .fill{background:var(--warm)}
+.bar span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phrase{font-family:var(--display);font-size:1.35rem;line-height:1.35;margin:0;text-wrap:balance}
+.step{display:flex;flex-direction:column;gap:12px}
+.stepnum{font-family:var(--mono);color:var(--accent);font-size:.8rem}
+.breath{display:grid;place-items:center;padding:12px 0}
+.orb{width:min(190px,55vw);aspect-ratio:1;max-width:100%;border-radius:50%;background:radial-gradient(circle at 40% 35%,var(--accent-soft),var(--accent));display:grid;place-items:center;transform:scale(.6);transition:transform 4s ease-in-out}
+.orb span{color:var(--surface);font:600 1.05rem var(--body);text-align:center}
+.phase{font-family:var(--display);font-size:1.2rem;margin-top:12px;min-height:1.5em}
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.ex p{margin:0;color:var(--muted)}
+.tagchip{display:inline-block;font:600 .68rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--warm);background:var(--warm-soft);padding:2px 8px;border-radius:999px;align-self:flex-start}
+.wheelbox{position:relative;width:min(260px,100%);margin:0 auto}
+.wheelbox canvas{width:100%;aspect-ratio:1;display:block}
+.pointer{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:20px solid var(--ink)}
+.constraint{background:var(--warm-soft);color:var(--warm);border-radius:10px;padding:9px 12px;font-weight:500}
+.ring{font-family:var(--mono);font-size:2rem;text-align:center}
+.streak{display:flex;gap:20px;flex-wrap:wrap}
+.streak div{display:flex;flex-direction:column}
+.streak b{font-family:var(--display);font-weight:400;font-size:1.7rem}
+.cands{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.cand{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.cand.sel{border-color:var(--good);background:var(--good-soft)}
+.cand b{font-size:1.2rem;font-weight:500}
+.cand small{color:var(--muted);font-size:.78rem}
+.cand .row{gap:6px}
+@media (max-width:440px){.cands{grid-template-columns:1fr}.cand{flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap}}
+.tnote{font-family:var(--mono);font-size:2rem;line-height:1.1}
+.tstate{font-weight:600;color:var(--muted)}
+.tstate[data-s="in"]{color:var(--good)}
+.tstate[data-s="hi"]{color:var(--warm)}
+.tstate[data-s="lo"]{color:var(--accent)}
+canvas.trace{width:100%;height:170px;display:block}
+.tstats{display:flex;gap:14px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}
+.tstats b{color:var(--ink)}
+#notePick p{margin:0}
 @media (prefers-reduced-motion:reduce){.orb{transition:none}.rec-dot{animation:none}}
 </style>
 
 <div class="wrap">
   <header>
     <h1>Voix posée</h1>
-    <p>Trouve ta voix de femme, affirmée ou sensuelle, et entraîne-la dix minutes par jour.</p>
-    <div class="goal"><span class="eyebrow">Objectif</span><div class="seg" role="group" aria-label="Objectif"><button data-goal="aff" aria-pressed="true">Affirmée</button><button data-goal="sens" aria-pressed="false">Sensuelle</button></div></div>
+    <p>Connaître tes voix, choisir la bonne, et savoir y aller quand tu veux.</p>
   </header>
 
   <nav role="tablist" aria-label="Sections">
-    <button role="tab" data-tab="seance" aria-selected="true">Séance</button>
-    <button role="tab" data-tab="mavoix" aria-selected="false">Ma voix</button>
-    <button role="tab" data-tab="souffle" aria-selected="false">Souffle</button>
-    <button role="tab" data-tab="resonance" aria-selected="false">Résonance</button>
-    <button role="tab" data-tab="analyse" aria-selected="false">Analyse</button>
-    <button role="tab" data-tab="roulette" aria-selected="false">Roulette</button>
+    <button role="tab" data-tab="voix" aria-selected="true">Mes voix</button>
+    <button role="tab" data-tab="note" aria-selected="false">Ma note</button>
+    <button role="tab" data-tab="train" aria-selected="false">Entraînement</button>
+    <button role="tab" data-tab="jour" aria-selected="false">Ma voix du jour</button>
+    <button role="tab" data-tab="echauf" aria-selected="false">Échauffement</button>
+    <button role="tab" data-tab="progres" aria-selected="false">Progrès</button>
   </nav>
 
-  <!-- SÉANCE -->
-  <section id="seance" class="stack">
-    <div>
-      <h2>La séance du jour</h2>
-      <p class="lead">Fais les étapes dans l'ordre. Le souffle d'abord, la voix ensuite, la spontanéité à la fin.</p>
+  <section id="voix" class="stack">
+    <div class="key">
+      <span class="eyebrow">Le principe</span>
+      <p>Tu n'as pas à inventer une nouvelle voix : tu en as déjà plusieurs, dont certaines te plaisent. Le travail se fait en trois temps :</p>
+      <ol>
+        <li><b>Connaître</b> chacune de tes voix : enregistre-les ci-dessous.</li>
+        <li><b>Basculer</b> dans tes voix cibles quand tu le décides (onglet Entraînement).</li>
+        <li><b>Repérer</b> quand une voix t'échappe (onglet Ma voix du jour).</li>
+      </ol>
     </div>
-    <div class="panel streak">
-      <div><span class="eyebrow">Aujourd'hui</span><b class="num" id="todayCount">0/6</b></div>
-      <div><span class="eyebrow">Série</span><b class="num" id="streak">0 j</b></div>
-      <div><span class="eyebrow">Enregistrements</span><b class="num" id="recCount">0</b></div>
+    <div class="panel stack">
+      <div><h3>La carte de tes voix</h3><p class="small">Plus un point est à gauche, plus la voix est grave. Plus il est haut, plus elle est assurée (fins de phrase qui descendent et vrais silences).</p></div>
+      <canvas class="map" id="map" aria-label="Carte des voix"></canvas>
+      <div class="legend"><span><i style="background:var(--good)"></i>Cible</span><span><i style="background:var(--accent)"></i>À garder</span><span><i style="background:var(--warm)"></i>À apaiser</span><span><i style="background:var(--ink)"></i>Modèle</span></div>
     </div>
-    <div class="panel">
-      <ul class="steps" id="steps"></ul>
+    <div class="panel stack">
+      <h3>Ce que disent tes voix</h3>
+      <ul class="insights" id="insights"></ul>
+    </div>
+    <div class="stack" id="voiceList"></div>
+    <div class="panel stack">
+      <h3>Ajouter une voix</h3>
+      <div class="row"><input type="text" id="newVoiceName" placeholder="Ex. voix au téléphone" aria-label="Nom de la nouvelle voix"><button class="btn small" id="addVoice">Ajouter</button></div>
     </div>
   </section>
 
-  <!-- MA VOIX -->
-  <section id="mavoix" class="stack" hidden>
-    <div>
-      <h2>Trouver ma voix</h2>
-      <p class="lead">Trois enregistrements courts pour que l'appli connaisse ta voix naturelle. Toutes tes cibles se règlent ensuite dessus.</p>
-    </div>
-    <div class="panel stack" id="profilePanel"></div>
+  <section id="note" class="stack" hidden>
+    <div><h2>Ma note</h2><p class="lead">Ta note d'ancrage, c'est la hauteur où ta voix revient se poser. Tu peux monter et descendre autour, mais tu repars toujours d'elle. C'est elle qui te sort des montagnes russes de ta voix enfantine.</p></div>
+    <div class="panel stack" id="notePick"></div>
+    <div class="panel stack" id="noteEx"></div>
     <div class="panel stack">
-      <span class="eyebrow">Étape 1 · 20 secondes</span>
-      <h3>Ta voix naturelle : le test « mm-hmm »</h3>
-      <p class="small">Dis « mm-hmm » comme quand tu approuves quelqu'un, sans réfléchir, puis enchaîne « oui, c'est ça ». Répète cinq fois, détendue. Cette hauteur devient ta référence.</p>
-      <div id="recNat"></div>
-    </div>
-    <div class="panel stack">
-      <span class="eyebrow">Étape 2 · 30 secondes</span>
-      <h3>Ta voix enjouée</h3>
-      <p class="small">Raconte un truc qui t'a fait rire récemment, avec ton énergie habituelle. On saura ce qui change quand tu t'emballes.</p>
-      <div id="recJoy"></div>
-    </div>
-    <div class="panel stack">
-      <span class="eyebrow">Étape 3 · facultatif</span>
-      <h3>Ta voix modèle</h3>
-      <p class="small">Fais un enregistrement d'écran de 30 à 60 s d'une vidéo où la personne dont tu aimes la voix parle seule, sans musique. Importe la vidéo ici : l'appli mesure sa hauteur, sa mélodie, son rythme et ses pauses, puis te compare à elle dans chaque résultat.</p>
-      <div id="recRef"></div>
+      <div class="row" style="justify-content:space-between"><h3>Accordeur</h3><div class="row"><button class="btn ghost small" id="hearNote">Écouter ma note</button><button class="btn small" id="tunerBtn">Activer le micro</button></div></div>
+      <div><div class="tnote" id="tNote">–</div><div class="tstate" id="tState" data-s="">Active le micro, puis fais « mmm ».</div></div>
+      <canvas class="trace" id="trace" aria-label="Courbe de ta voix en direct"></canvas>
+      <p class="small">Bande verte : ta note, à deux demi-tons près. La ligne violette, c'est ta voix sur les 8 dernières secondes.</p>
+      <div class="row" style="justify-content:space-between"><div class="tstats" id="tStats"></div><button class="btn ghost small" id="tReset">Remettre à zéro</button></div>
     </div>
   </section>
 
-  <!-- SOUFFLE -->
-  <section id="souffle" class="stack" hidden>
-    <div>
-      <h2>Respiration basse</h2>
-      <p class="lead">Une main sur le ventre. Inspire par le nez en gonflant le ventre, pas la poitrine. Expire sur un « sss » long et régulier : c'est ce souffle qui va porter ta voix.</p>
+  <section id="train" class="stack" hidden>
+    <div><h2>Basculer dans ta voix</h2><p class="lead">Choisis la voix que tu veux savoir prendre à la demande. Tu t'entraînes à partir de tes propres enregistrements, pas d'une norme.</p></div>
+    <div class="panel row">
+      <label for="targetSel" class="eyebrow">Voix cible</label>
+      <select id="targetSel"></select>
     </div>
+    <div class="panel step">
+      <span class="stepnum">1 · Bascule</span>
+      <h3>Écoute ta voix, puis reproduis-la</h3>
+      <div class="row"><button class="btn ghost small" id="playTarget">Écouter ma voix cible</button><span class="small" id="targetInfo"></span></div>
+      <p class="phrase" id="phrase">Prends ton temps, rien ne presse.</p>
+      <div class="row"><button class="btn ghost small" id="newPhrase">Autre phrase</button></div>
+      <div id="recBascule"></div>
+      <div class="stack" id="resBascule" hidden></div>
+    </div>
+    <div class="panel step">
+      <span class="stepnum">2 · Shadowing</span>
+      <h3>Imite ton modèle, morceau par morceau</h3>
+      <p class="small">Écoute un morceau, puis répète-le tout de suite en copiant tout : le rythme, les silences, la façon dont la voix retombe.</p>
+      <div class="stack" id="shadowBox"></div>
+    </div>
+    <div class="panel step">
+      <span class="stepnum">3 · Spontané</span>
+      <h3>Improvise en gardant ta voix</h3>
+      <p class="small">Tire un sujet et parle sans préparer. Le défi : rester dans ta voix cible même quand tu réfléchis.</p>
+      <div class="wheelbox"><div class="pointer"></div><canvas id="wheel" width="560" height="560" aria-label="Roue des sujets"></canvas></div>
+      <div class="row" style="justify-content:center"><button class="btn warm" id="spinBtn">Lancer la roue</button></div>
+      <span class="eyebrow" id="promptCat">Exemple</span>
+      <p class="phrase" id="promptText">Défends l'idée que la pluie est le meilleur temps.</p>
+      <div class="constraint" id="constraint">Défi : fais au moins trois pauses volontaires.</div>
+      <div class="row" role="group" aria-label="Durée">
+        <span class="small">Durée</span>
+        <button class="btn ghost small" data-dur="30">30 s</button>
+        <button class="btn small" data-dur="60">1 min</button>
+        <button class="btn ghost small" data-dur="90">1 min 30</button>
+      </div>
+      <div class="ring" id="ring">1:00</div>
+      <div class="row" style="justify-content:center"><button class="btn" id="talkBtn">Parler</button></div>
+      <p class="small" id="talkMsg"></p>
+      <div class="stack" id="resSpont" hidden></div>
+    </div>
+  </section>
+
+  <section id="jour" class="stack" hidden>
+    <div><h2>Ma voix du jour</h2><p class="lead">Parle 30 secondes de ta journée, sans faire attention à ta voix. L'appli te dit de laquelle de tes voix tu étais la plus proche. C'est comme ça qu'on repère une voix qui t'échappe.</p></div>
+    <div class="panel stack"><div id="recJour"></div></div>
+    <div class="panel stack" id="resJour" hidden></div>
+  </section>
+
+  <section id="echauf" class="stack" hidden>
+    <div><h2>Échauffement</h2><p class="lead">Trois minutes avant de t'entraîner. Le souffle porte la voix, la résonance lui donne de la chaleur.</p></div>
     <div class="panel">
       <div class="breath">
         <div class="orb" id="orb"><span id="orbLabel">Prête ?</span></div>
         <div class="phase" id="phase">4 s · 2 s · 6 s</div>
-        <p class="small num" id="cycles">0 cycle sur 8</p>
+        <p class="small num" id="cycles">0 cycle sur 6</p>
       </div>
-      <div class="row" style="justify-content:center">
-        <button class="btn" id="breathBtn">Commencer</button>
-      </div>
+      <div class="row" style="justify-content:center"><button class="btn" id="breathBtn">Respirer</button></div>
     </div>
-    <p class="small">Si la tête tourne, reprends une respiration normale. L'expiration doit rester confortable.</p>
+    <div class="stack" id="exCards"></div>
   </section>
 
-  <!-- RÉSONANCE -->
-  <section id="resonance" class="stack" hidden>
-    <div>
-      <h2>Échauffer la voix</h2>
-      <p class="lead">Ces exercices déplacent la vibration vers la poitrine et le masque. Ils donnent un timbre plus plein sans forcer vers le grave.</p>
+  <section id="progres" class="stack" hidden>
+    <div><h2>Progrès</h2><p class="lead">Ta proximité avec ta voix cible, séance après séance.</p></div>
+    <div class="panel streak">
+      <div><span class="eyebrow">Série</span><b class="num" id="streak">0 j</b></div>
+      <div><span class="eyebrow">Bascules</span><b class="num" id="nbBasc">0</b></div>
+      <div><span class="eyebrow">Voix du jour</span><b class="num" id="nbJour">0</b></div>
     </div>
-    <div class="cards" id="exCards"></div>
-  </section>
-
-  <!-- ANALYSE -->
-  <section id="analyse" class="stack" hidden>
-    <div>
-      <h2>Écoute-toi</h2>
-      <p class="lead">Enregistre-toi, l'appli mesure ta hauteur, ta stabilité, ton débit et tes pauses. Tout reste sur ton téléphone.</p>
-    </div>
-    <div class="row">
-      <div class="seg" role="group" aria-label="Mode">
-        <button id="modeRead" aria-pressed="true">Lecture</button>
-        <button id="modeFree" aria-pressed="false">Parole libre</button>
-      </div>
-    </div>
-    <div class="panel" id="readPanel">
-      <span class="eyebrow">Lis à voix haute, lentement</span>
-      <p class="readtext" id="readText"></p>
-    </div>
-    <div class="panel stack" id="recA"></div>
-    <div class="panel stack" id="resultsA"></div>
-    <div class="panel stack">
-      <h3>Ton historique</h3>
-      <div class="tablebox"><table><thead><tr><th>Date</th><th>Type</th><th>Score</th><th>Hauteur</th><th>Rythme</th><th>Pauses/min</th></tr></thead><tbody id="hist"></tbody></table></div>
-      <p class="small" id="histNote"></p>
-    </div>
-  </section>
-
-  <!-- ROULETTE -->
-  <section id="roulette" class="stack" hidden>
-    <div>
-      <h2>Roulette de spontanéité</h2>
-      <p class="lead">Lance la roue, découvre ton sujet, et parle sans préparer. Le but n'est pas d'avoir raison, c'est de tenir le fil avec une voix calme.</p>
-    </div>
-    <div class="panel stack">
-      <div class="wheelbox"><div class="pointer"></div><canvas id="wheel" width="640" height="640" aria-label="Roue des sujets"></canvas></div>
-      <div class="row" style="justify-content:center">
-        <button class="btn warm" id="spinBtn">Lancer la roue</button>
-      </div>
-    </div>
-    <div class="panel stack" id="promptPanel">
-      <span class="eyebrow" id="promptCat">Exemple</span>
-      <p class="prompt" id="promptText">Défends l'idée que les chaussettes dépareillées sont un choix de vie.</p>
-      <div class="constraint" id="constraint">Défi : fais au moins trois pauses volontaires.</div>
-      <div class="row durations" role="group" aria-label="Durée">
-        <span class="small">Durée</span>
-        <button class="btn ghost" data-dur="30">30 s</button>
-        <button class="btn" data-dur="60">1 min</button>
-        <button class="btn ghost" data-dur="90">1 min 30</button>
-        <button class="btn ghost" data-dur="120">2 min</button>
-      </div>
-      <div class="ring" id="ring">1:00</div>
-      <div class="row" style="justify-content:center">
-        <button class="btn" id="talkBtn">Parler</button>
-        <button class="btn ghost" id="rerollBtn">Autre sujet</button>
-      </div>
-      <p class="small">« Parler » lance le chrono et enregistre ta réponse si le micro est disponible. À la fin, tu vois tes pauses et ta hauteur.</p>
-    </div>
-    <div class="panel stack" id="resultsR" hidden></div>
-    <div class="panel">
-      <h3>Pour broder sans paniquer</h3>
-      <ul class="tips">
-        <li>Commence par une phrase courte qui pose ta position. Puis respire.</li>
-        <li>Structure simple : une idée, un exemple, une conclusion.</li>
-        <li>Quand tu bloques, remplace le « euh » par un silence. Le silence a l'air sûr de lui, le « euh » non.</li>
-        <li>Termine en descendant la voix sur le dernier mot.</li>
-      </ul>
-    </div>
+    <div class="panel stack"><h3>Proximité avec la voix cible</h3><canvas class="pitch" id="progChart" aria-label="Courbe de progression"></canvas><p class="small" id="progNote"></p></div>
+    <div class="panel stack"><h3>Historique</h3><div class="tablebox"><table><thead><tr><th>Date</th><th>Exercice</th><th>Cible</th><th>Résultat</th></tr></thead><tbody id="hist"></tbody></table></div></div>
   </section>
 </div>
-
-<input type="file" id="fileIn" accept="audio/*" hidden>
 
 <script>
 (function(){
 "use strict";
 const $=s=>document.querySelector(s);
-const store={get(k,d){try{const v=localStorage.getItem("vp."+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("vp."+k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store={get(k,d){try{const v=localStorage.getItem("vp2."+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("vp2."+k,JSON.stringify(v))}catch(e){}}};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const rnd=n=>{try{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n}catch(e){return Math.floor(Math.random()*n)}};
 const pick=a=>a[rnd(a.length)];
-const todayKey=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const dayKey=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const fmt=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+const st=(a,b)=>12*Math.log2(a/b);
 
-/* ---------- Onglets ---------- */
-const tabs=[...document.querySelectorAll("nav button")];
-function show(id){tabs.forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===id?"true":"false"));
-  ["seance","mavoix","souffle","resonance","analyse","roulette"].forEach(s=>{document.getElementById(s).hidden=s!==id});
-  if(id==="roulette")drawWheel(wheelAngle);if(id==="analyse")redrawCharts();if(id==="mavoix")renderProfile();window.scrollTo({top:0})}
-tabs.forEach(b=>b.addEventListener("click",()=>show(b.dataset.tab)));
+/* Stockage audio : IndexedDB, avec repli en mémoire */
+const memAudio=new Map();let dbp=null;
+function db(){if(dbp)return dbp;dbp=new Promise(ok=>{try{const r=indexedDB.open("voixposee",1);r.onupgradeneeded=()=>r.result.createObjectStore("audio");r.onsuccess=()=>ok(r.result);r.onerror=()=>ok(null)}catch(e){ok(null)}});return dbp}
+async function putAudio(id,blob){memAudio.set(id,blob);const d=await db();if(!d)return;try{d.transaction("audio","readwrite").objectStore("audio").put(blob,id)}catch(e){}}
+async function getAudio(id){if(memAudio.has(id))return memAudio.get(id);const d=await db();if(!d)return null;return new Promise(ok=>{try{const r=d.transaction("audio").objectStore("audio").get(id);r.onsuccess=()=>{if(r.result)memAudio.set(id,r.result);ok(r.result||null)};r.onerror=()=>ok(null)}catch(e){ok(null)}})}
+let player=null,stopT=null;
+async function playBlob(blob,s,e){if(!blob)return;if(player){player.pause();clearTimeout(stopT)}
+  player=new Audio(URL.createObjectURL(blob));player.preload="auto";
+  if(s!=null){await new Promise(r=>{if(player.readyState>=1)r();else{player.addEventListener("loadedmetadata",r,{once:true});setTimeout(r,1500)}});try{player.currentTime=Math.max(0,s-0.05)}catch(x){}}
+  try{await player.play()}catch(x){}
+  if(e!=null)stopT=setTimeout(()=>player.pause(),(e-s+0.25)*1000)}
 
-/* ---------- Séance ---------- */
-const STEPS=[
- {id:"souffle",t:"Respiration basse",d:"2 min",go:"souffle"},
- {id:"hum",t:"Humming « mmm »",d:"1 min",go:"resonance"},
- {id:"sirene",t:"Sirènes douces",d:"1 min",go:"resonance"},
- {id:"paille",t:"Paille ou lèvres vibrées",d:"1 min",go:"resonance"},
- {id:"lecture",t:"Lecture analysée",d:"2 min",go:"analyse"},
- {id:"roulette",t:"Roulette de spontanéité",d:"3 min",go:"roulette"}];
-function days(){return store.get("days",{})}
-function renderSteps(){
-  const all=days(),today=all[todayKey()]||[];
-  $("#steps").innerHTML="";
-  STEPS.forEach(s=>{const li=document.createElement("li");
-    li.innerHTML=`<input type="checkbox" id="st-${s.id}" ${today.includes(s.id)?"checked":""} aria-label="${s.t} fait"><div class="t"><label for="st-${s.id}">${s.t}</label><br><button class="link">Y aller</button></div><span class="d">${s.d}</span>`;
-    li.querySelector("input").addEventListener("change",e=>markStep(s.id,e.target.checked));
-    li.querySelector(".link").addEventListener("click",()=>show(s.go));
-    $("#steps").appendChild(li)});
-  $("#todayCount").textContent=today.length+"/6";
-  let n=0;const d=new Date();if(!(all[todayKey()]||[]).length)d.setDate(d.getDate()-1);
-  for(;;){const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");if((all[k]||[]).length){n++;d.setDate(d.getDate()-1)}else break}
-  $("#streak").textContent=n+" j";
-  $("#recCount").textContent=store.get("hist",[]).length;
-}
-function markStep(id,on=true){const all=days(),k=todayKey(),t=new Set(all[k]||[]);on?t.add(id):t.delete(id);all[k]=[...t];store.set("days",all);renderSteps()}
-
-/* ---------- Souffle ---------- */
-let breathOn=false,breathTimer=null,cyc=0;
-const PH=[["Inspire",4,1],["Garde",2,1],["Expire « sss »",6,.6]];
-function breathStep(i){if(!breathOn)return;const[p,s,sc]=PH[i];
-  $("#orb").style.transitionDuration=s+"s";$("#orb").style.transform=`scale(${sc})`;
-  $("#orbLabel").textContent=p;let left=s;$("#phase").textContent=p+" · "+left+" s";
-  const tick=setInterval(()=>{left--;if(left>0)$("#phase").textContent=p+" · "+left+" s"},1000);
-  breathTimer=setTimeout(()=>{clearInterval(tick);if(i===2){cyc++;$("#cycles").textContent=cyc+" cycle"+(cyc>1?"s":"")+" sur 8";if(cyc>=8){stopBreath(true);return}}breathStep((i+1)%3)},s*1000);
-  breathTimer.tick=tick}
-function stopBreath(done){breathOn=false;clearTimeout(breathTimer);if(breathTimer&&breathTimer.tick)clearInterval(breathTimer.tick);
-  $("#orb").style.transform="scale(.6)";$("#orbLabel").textContent=done?"Bravo":"Prête ?";$("#phase").textContent=done?"8 cycles faits":"4 s · 2 s · 6 s";$("#breathBtn").textContent="Commencer";if(done)markStep("souffle")}
-$("#breathBtn").addEventListener("click",()=>{if(breathOn){stopBreath(false);return}breathOn=true;cyc=0;$("#cycles").textContent="0 cycle sur 8";$("#breathBtn").textContent="Arrêter";breathStep(0)});
-
-/* ---------- Résonance ---------- */
-const EX=[
- {id:"hum",t:"Humming « mmm »",s:60,p:"Lèvres fermées, dents desserrées. Fais un « mmm » sur une note confortable, plutôt dans le bas de ta voix. Tu dois sentir les lèvres et le nez vibrer. Pose une main sur ta poitrine : cherche à la faire vibrer aussi."},
- {id:"sirene",t:"Sirènes douces",s:60,p:"Sur un « ng » (comme la fin de « camping »), glisse du grave vers l'aigu puis redescends, sans à-coups. Finis toujours par la descente : c'est elle qui ancre la voix en bas."},
- {id:"paille",t:"Paille ou lèvres vibrées",s:60,p:"Souffle un son dans une paille, ou fais vibrer tes lèvres comme un « brrr » de cheval. Ça détend la gorge et règle la pression de l'air. Fais des petites mélodies."},
- {id:"mma",t:"« Mmm-ma, mmm-mo, mmm-mi »",s:45,p:"Commence par le « mmm », puis ouvre sur la voyelle en gardant la même vibration. Le but est que la voix parlée garde le timbre du humming."},
- {id:"chute",t:"Phrases qui descendent",s:60,p:"Dis : « Je sais ce que je veux. » « C'est une bonne idée. » « On fait comme ça. » Laisse la voix tomber sur le dernier mot, comme on pose un objet sur une table. Pas de montée en fin de phrase."},
- {id:"lente",t:"Compter lentement",s:45,p:"Compte de 1 à 20 sur une seule voix, une seconde par nombre, en respirant tous les 5. Garde la même hauteur du début à la fin."},
- {id:"souffleatt",tag:"Sensuelle",t:"Attaque soufflée",s:60,p:"Dis « hhh-oui », « hhh-ah bon », « hhh-j'adore » en laissant sortir un filet d'air juste avant le son. Le son commence doucement, sans coup de glotte. Puis fais pareil sur des phrases entières, avec juste un peu d'air au départ."},
- {id:"confidence",tag:"Sensuelle",t:"Voix de confidence",s:60,p:"Imagine quelqu'un à 50 cm de toi. Raconte ta journée à volume bas, sans chuchoter : la voix reste timbrée, elle porte juste moins loin. Souris légèrement, ça réchauffe le son."},
- {id:"glisse",tag:"Sensuelle",t:"Mots qui glissent",s:45,p:"Lis une phrase en liant tous les mots comme une seule vague, en allongeant les voyelles : « Je-n'ai-rien-à-prouver ». Aucun mot détaché, aucune accélération."},
- {id:"fingrain",tag:"Sensuelle",t:"Fins posées avec grain",s:45,p:"Sur la dernière syllabe d'une phrase, laisse la voix descendre et se relâcher jusqu'à un léger grésillement, sans pousser. Si ça gratte ou fait mal, arrête : on ne force jamais le grain."}];
-const exTimers={};
-EX.forEach(e=>{const c=document.createElement("div");c.className="ex";
-  c.innerHTML=`${e.tag?`<span class="tagchip">${e.tag}</span>`:""}<h3>${e.t}</h3><p>${e.p}</p><div class="row"><span class="timer num" id="tm-${e.id}">${fmt(e.s)}</span><button class="btn ghost" id="tb-${e.id}">Lancer</button></div>`;
-  $("#exCards").appendChild(c);
-  c.querySelector("button").addEventListener("click",ev=>{const b=ev.currentTarget,el=$("#tm-"+e.id);
-    if(exTimers[e.id]){clearInterval(exTimers[e.id]);exTimers[e.id]=null;el.textContent=fmt(e.s);b.textContent="Lancer";return}
-    let left=e.s;b.textContent="Arrêter";exTimers[e.id]=setInterval(()=>{left--;el.textContent=fmt(left);
-      if(left<=0){clearInterval(exTimers[e.id]);exTimers[e.id]=null;b.textContent="Refaire";el.textContent="Fait";if(["hum","sirene","paille"].includes(e.id))markStep(e.id)}},1000)})});
-
-/* ---------- Analyse audio ---------- */
-const READ="Chaque matin, la lumière arrive d'abord sur les crêtes, puis elle descend lentement vers la mer. Je prends le temps de la regarder. Je respire. Rien ne presse vraiment. Quand je parle, je choisis mes mots comme on choisit un chemin, sans courir, en sachant où je vais. Une phrase claire vaut mieux que trois phrases pressées. Je laisse un silence après une idée importante, parce que le silence aussi dit quelque chose. Ma voix part du ventre, elle s'appuie sur mon souffle, et elle descend à la fin de la phrase. Je n'ai rien à prouver. Je dis ce que je pense, calmement, et je laisse les autres venir à moi.";
-$("#readText").textContent=READ;
-const READ_WORDS=READ.split(/\s+/).filter(Boolean).length;
-let mode="read";
-$("#modeRead").onclick=()=>{mode="read";$("#modeRead").setAttribute("aria-pressed","true");$("#modeFree").setAttribute("aria-pressed","false");$("#readPanel").hidden=false};
-$("#modeFree").onclick=()=>{mode="free";$("#modeFree").setAttribute("aria-pressed","true");$("#modeRead").setAttribute("aria-pressed","false");$("#readPanel").hidden=true};
-
+/* Analyse */
 function analyze(buf){
   const sr0=buf.sampleRate;let x=buf.getChannelData(0);
   if(buf.numberOfChannels>1){const y=buf.getChannelData(1),m=new Float32Array(x.length);for(let i=0;i<x.length;i++)m[i]=(x[i]+y[i])/2;x=m}
@@ -380,156 +310,130 @@ function analyze(buf){
     for(let L=minL;L<=maxL&&L<N-8;L++){let c=0,e1=0,e2=0;for(let i=0;i<N-L;i++){const a=s[o+i],b=s[o+i+L];c+=a*b;e1+=a*a;e2+=b*b}const v=c/Math.sqrt(e1*e2+1e-12);r[L]=v;if(v>best){best=v;bl=L}}
     if(best>0.55){for(let L=minL+1;L<bl;L++){if(r[L]>=0.88*best&&r[L]>=r[L-1]&&r[L]>=(r[L+1]||0)){bl=L;break}}best=r[bl]}
     if(best>0.5&&bl>minL&&bl<maxL){const a=r[bl-1]||best,b=r[bl+1]||best,d=(a-b)/(2*(a-2*best+b)||1);const hz=sr/(bl+(isFinite(d)?d:0));if(hz>70&&hz<420)pitch.push([f*0.02,hz])}}
-  // écarte les erreurs d'octave et les bruits (points très loin de la médiane)
   if(pitch.length){const s0=pitch.map(p=>p[1]).sort((a,b)=>a-b),m0=s0[Math.floor((s0.length-1)/2)];pitch=pitch.filter(p=>p[1]>m0/1.7&&p[1]<m0*1.7)}
-  let pauses=0,longest=0,pauseTime=0;const pauseList=[];
-  if(first>=0){for(let f=first;f<=last;){if(!sp[f]){let g=f;while(g<=last&&!sp[g])g++;const dur=(g-f)*0.02;if(dur>=0.3){pauses++;pauseTime+=dur;pauseList.push(dur);longest=Math.max(longest,dur)}f=g}else f++}}
+  let longest=0,pauseTime=0;const pauseList=[],segs=[];
+  if(first>=0){let segStart=first;
+    for(let f=first;f<=last;){if(!sp[f]){let g=f;while(g<=last&&!sp[g])g++;const dur=(g-f)*0.02;if(dur>=0.3){pauseTime+=dur;pauseList.push(dur);longest=Math.max(longest,dur);segs.push([segStart*0.02,f*0.02]);segStart=g}f=g}else f++}
+    segs.push([segStart*0.02,last*0.02])}
   const span=first>=0?(last-first)*0.02:0;
-  // syllabes : pics d'énergie dans la parole
   let syl=0,lastPk=-99;
   if(first>=0){const env=new Float32Array(frames);for(let f=0;f<frames;f++){let a=0,c=0;for(let d=-2;d<=2;d++){const g=f+d;if(g>=0&&g<frames){a+=rms[g];c++}}env[f]=a/c}
     for(let f=first;f<=last;f++){if(!sp[f]||env[f]<thr*1.3)continue;let mx=true;for(let d=-4;d<=4;d++){const g=f+d;if(g>=0&&g<frames&&env[g]>env[f]){mx=false;break}}if(mx&&f-lastPk>=6){syl++;lastPk=f}}}
   const talk=Math.max(0,span-pauseTime);
+  let falls=0,nEnd=0;const segInfo=[];
+  segs.forEach(([a,b])=>{const pts=pitch.filter(p=>p[0]>=a&&p[0]<=b);let dir=null,med=null;
+    if(b-a>=0.6&&pts.length>=10){const hs=pts.map(p=>p[1]).sort((x,y)=>x-y);med=hs[Math.floor(hs.length/2)];const tail=pts.slice(Math.floor(pts.length*0.7)).map(p=>p[1]).sort((x,y)=>x-y);const d=st(tail[Math.floor(tail.length/2)],med);nEnd++;if(d<-0.8){falls++;dir="down"}else if(d>0.8)dir="up";else dir="flat"}
+    segInfo.push({s:a,e:b,med,dir})});
   const hz=pitch.map(p=>p[1]).sort((a,b)=>a-b),pq=p=>hz[Math.floor(p*(hz.length-1))];
-  return{duration:x.length/sr0,span,pauses,longest,pauseTime,pauseList,pitch,sylRate:talk>2?syl/talk:null,
-    median:hz.length?pq(.5):null,p10:hz.length?pq(.1):null,p90:hz.length?pq(.9):null}}
-
+  const real=pauseList.filter(d=>d>=0.8).length;
+  return{duration:x.length/sr0,span,longest,pitch,segInfo,
+    median:hz.length?pq(.5):null,spread:hz.length>10?12*Math.log2(pq(.9)/pq(.1)):null,
+    syl:talk>2?syl/talk:null,rppm:span>8?real/(span/60):null,fall:nEnd?falls/nEnd*100:null}}
+function statsOf(r){const f=(v,d)=>v==null?null:+v.toFixed(d);return{median:r.median?Math.round(r.median):null,spread:f(r.spread,1),syl:f(r.syl,1),rppm:f(r.rppm,1),longest:f(r.longest,1),fall:r.fall==null?null:Math.round(r.fall),dur:f(r.span,1)}}
 const NOTES=["do","do♯","ré","ré♯","mi","fa","fa♯","sol","sol♯","la","la♯","si"];
 const noteOf=f=>{const m=Math.round(69+12*Math.log2(f/440));return NOTES[(m%12+12)%12]+(Math.floor(m/12)-1)};
-const st=(a,b)=>12*Math.log2(a/b);
-const goal=()=>store.get("goal","aff");
-const profile=()=>store.get("profile",{});
-const sgn=d=>(d>=0?"+":"−")+Math.abs(d).toFixed(1);
 
-function targets(){const p=profile(),N=p.natural||null,base=N||200;
-  return goal()==="sens"
-   ?{name:"Sensuelle",N,lo:base*Math.pow(2,-3/12),hi:base,spread:[3,6],wpm:[110,130],syl:[3.3,4.3],ppm:4,longest:1.5}
-   :{name:"Affirmée",N,lo:base*Math.pow(2,-2/12),hi:base*Math.pow(2,1/12),spread:[4,8],wpm:[130,150],syl:[4,5],ppm:3,longest:1.2}}
-const near=(v,[a,b],tol)=>v<a?Math.max(0,1-(a-v)/tol):v>b?Math.max(0,1-(v-b)/tol):1;
+/* Comparaison de voix */
+const FEATS=[
+ {k:"median",lbl:"Hauteur",unit:" Hz",norm:(a,b)=>st(a,b)/2.5},
+ {k:"spread",lbl:"Mélodie",unit:" dt",norm:(a,b)=>(a-b)/3},
+ {k:"syl",lbl:"Rythme",unit:" syl/s",norm:(a,b)=>(a-b)/0.8},
+ {k:"rppm",lbl:"Vraies pauses",unit:"/min",norm:(a,b)=>(a-b)/2},
+ {k:"fall",lbl:"Fins qui descendent",unit:" %",norm:(a,b)=>(a-b)/30}];
+function compare(a,b){const diffs=[];let sum=0,n=0;
+  FEATS.forEach(F=>{if(a[F.k]==null||b[F.k]==null)return;const d=F.norm(a[F.k],b[F.k]);diffs.push({F,d});sum+=d*d;n++});
+  if(!n)return{prox:null,diffs};const dist=Math.sqrt(sum*5/n);return{prox:Math.round(100*Math.exp(-dist*dist/8)),diffs}}
+function tipFor(diff,name){const d=diff.d,k=diff.F.k,N=esc(name);
+  const T={median:d>0?`Tu es plus aiguë que ta voix ${N}. Démarre plus bas, sur un « mmm » grave, et garde cette note.`:`Tu es plus grave que ta voix ${N}. Remonte un peu, sans forcer.`,
+   spread:d>0?`Ta voix bouge plus que dans ta voix ${N}. Garde une ligne plus calme, une seule montée par phrase.`:`Ta voix ${N} est plus chantante. Mets plus de relief sur un ou deux mots.`,
+   syl:d>0?`Tu parles plus vite que dans ta voix ${N}. Allonge les voyelles et laisse les mots respirer.`:`Tu es plus lente que dans ta voix ${N}. Laisse couler un peu plus.`,
+   rppm:d<0?`Ta voix ${N} fait plus de silences. Ose t'arrêter une à deux secondes après une idée.`:`Tu t'arrêtes plus souvent que dans ta voix ${N}. Enchaîne un peu plus.`,
+   fall:d<0?`Tes fins de phrase montent plus que dans ta voix ${N}. Pose le dernier mot vers le bas, comme un objet sur une table.`:`Tes fins descendent plus que dans ta voix ${N}. C'est rarement un problème.`};
+  return T[k]}
+function fmtVal(F,v){return v==null?"–":v+F.unit}
+function compareTable(mine,ref,refName){return `<div class="tablebox"><table><thead><tr><th></th><th>Toi</th><th>${esc(refName)}</th></tr></thead><tbody>${FEATS.map(F=>`<tr><td>${F.lbl}</td><td class="num">${fmtVal(F,mine[F.k])}</td><td class="num">${fmtVal(F,ref[F.k])}</td></tr>`).join("")}</tbody></table></div>`}
 
-function evaluate(res,m){
-  const T=targets(),o={T,tips:[]};
-  o.spread=res.median?12*Math.log2(res.p90/res.p10):null;
-  o.wpm=m==="read"&&res.span>5?READ_WORDS/(res.span/60):null;
-  const real=(res.pauseList||[]).filter(d=>d>=0.8);o.real=real.length;o.rppm=res.span>0?real.length/(res.span/60):0;
-  o.syl=res.sylRate;
-  const sc={},dir={};
-  if(res.median){const lo=st(res.median,T.lo),hi=st(res.median,T.hi);sc.h=lo<0?Math.max(0,1+lo/3):hi>0?Math.max(0,1-hi/3):1;dir.h=lo<0?"low":hi>0?"high":"ok"}
-  if(o.spread!=null){sc.m=near(o.spread,T.spread,4);dir.m=o.spread<T.spread[0]?"low":o.spread>T.spread[1]?"high":"ok"}
-  if(o.wpm!=null){sc.r=near(o.wpm,T.wpm,50);dir.r=o.wpm<T.wpm[0]?"low":o.wpm>T.wpm[1]?"high":"ok"}
-  else if(o.syl!=null){sc.r=near(o.syl,T.syl,1.5);dir.r=o.syl<T.syl[0]?"low":o.syl>T.syl[1]?"high":"ok"}
-  sc.p=0.6*Math.min(1,o.rppm/T.ppm)+0.4*Math.min(1,res.longest/T.longest);dir.p="low";
-  o.sc=sc;const ks=Object.keys(sc);
-  o.score=ks.length?Math.round(ks.reduce((a,k)=>a+sc[k],0)/ks.length*100):null;
-  const MSG={
-   h:{high:"Ta voix monte au-dessus de ta zone. Avant de parler, fais 30 s de humming et démarre chaque phrase sur la note de ton « mm-hmm ».",
-      low:"Tu descends sous ta zone, tu risques de forcer. Remonte un peu : la voix doit rester confortable."},
-   m:{high:"Ta voix fait des montagnes russes, c'est ce qui sonne jeune. Garde les montées pour un ou deux mots par phrase, et pose toujours la fin.",
-      low:"Ta voix est un peu plate. Mets un mot en relief par phrase, puis laisse retomber."},
-   r:{high:o.wpm!=null?`Ralentis : vise ${T.wpm[0]} à ${T.wpm[1]} mots/min, soit environ ${Math.round(READ_WORDS/T.wpm[1]*60)} à ${Math.round(READ_WORDS/T.wpm[0]*60)} s pour lire le texte.`:"Tu parles vite. Allonge les voyelles et laisse les mots respirer.",
-      low:"Tu es très lente. C'est bien pour s'entraîner, mais garde un peu de fluidité."},
-   p:{low:`Ajoute de vrais silences : au moins ${T.ppm} par minute, d'une seconde environ. Compte « un, deux » dans ta tête après chaque point.`}};
-  const LBL={h:"Hauteur",m:"Mélodie",r:"Rythme",p:"Pauses"};
-  const worst=ks.filter(k=>sc[k]<0.85).sort((a,b)=>sc[a]-sc[b]);
-  o.priority=worst.length?{label:LBL[worst[0]],text:MSG[worst[0]][dir[worst[0]]]}
-    :{label:"Tout est dans la cible",text:goal()==="sens"?"Bravo. Travaille maintenant ce que l'appli ne mesure pas : un volume plus bas et un peu d'air au début des phrases.":"Bravo. Refais la même chose en parole libre avec la roulette."};
-  worst.slice(1).forEach(k=>o.tips.push(LBL[k]+" : "+MSG[k][dir[k]]));
-  if(!T.N)o.tips.push("Ta zone de hauteur est une estimation. Fais le test « mm-hmm » dans l'onglet Ma voix pour la personnaliser.");
-  if(goal()==="sens")o.tips.push("L'appli ne mesure ni le souffle ni le volume. Parle comme si la personne était à 50 cm de toi, et laisse passer un peu d'air au début des phrases.");
-  return o}
+/* Voix */
+const READ="Chaque matin, la lumière arrive d'abord sur les crêtes, puis elle descend lentement vers la mer. Je prends le temps de la regarder. Je respire. Rien ne presse vraiment. Quand je parle, je choisis mes mots comme on choisit un chemin, sans courir, en sachant où je vais. Une phrase claire vaut mieux que trois phrases pressées. Je laisse un silence après une idée importante, parce que le silence aussi dit quelque chose.";
+const DEFAULT_VOICES=[
+ {id:"lectrice",name:"Lectrice",role:"garder",prompt:"Lis ce texte à voix haute, comme une lectrice qui articule bien.",read:true},
+ {id:"pro",name:"Professionnelle",role:"cible",prompt:"Présente ton travail comme en réunion ou devant un public, pendant 30 secondes."},
+ {id:"mavoix",name:"Ma voix",role:"cible",prompt:"Ta voix à toi : la chaleur de ta voix quotidienne, l'ancrage de ta voix pro. Pars de ta note (onglet Ma note) et parle 30 secondes de ta journée."},
+ {id:"charme",name:"Charme",role:"cible",prompt:"Parle comme quand tu cherches à charmer quelqu'un. 30 secondes, sur n'importe quel sujet."},
+ {id:"quotidienne",name:"Quotidienne",role:"apaiser",prompt:"Parle de ta journée comme à une amie, sans faire attention à ta voix."},
+ {id:"hesitante",name:"Hésitante",role:"apaiser",prompt:"Explique un sujet que tu maîtrises mal, sans préparer."},
+ {id:"enfantine",name:"Enfantine",role:"apaiser",prompt:"Parle comme quand tu fais la petite, quand tu es câline ou que tu demandes quelque chose."},
+ {id:"modele",name:"Aurore",role:"modele",prompt:"Importe un enregistrement d'écran de 30 à 60 s où elle parle seule, sans musique."}];
+const ROLES={cible:"Cible",garder:"À garder",apaiser:"À apaiser",modele:"Modèle"};
+function voices(){const v=store.get("voices",null);if(v){if(!v.some(x=>x.id==="mavoix")){const i=v.findIndex(x=>x.id==="pro");v.splice(i+1,0,{...DEFAULT_VOICES.find(x=>x.id==="mavoix"),stats:null});store.set("voices",v)}return v}const d=DEFAULT_VOICES.map(x=>({...x,stats:null}));store.set("voices",d);return d}
+function saveVoices(v){store.set("voices",v)}
+const recorded=()=>voices().filter(v=>v.stats&&v.stats.median);
+const roleColor=r=>css(r==="cible"?"--good":r==="garder"?"--accent":r==="apaiser"?"--warm":"--ink");
+function assurance(s){if(s.fall==null&&s.rppm==null)return null;const a=s.fall==null?0.5:s.fall/100,b=s.rppm==null?0.5:Math.min(1,s.rppm/4);return Math.round((0.55*a+0.45*b)*100)}
 
-function drawPitch(cv,res,T){
-  const dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,h=180;cv.width=w*dpr;cv.height=h*dpr;
-  const c=cv.getContext("2d");c.scale(dpr,dpr);c.clearRect(0,0,w,h);
-  const lo=Math.log(80),hi=Math.log(400),pl=36,pr=8,pt=8,pb=20;
-  const Y=f=>pt+(h-pt-pb)*(1-(Math.log(f)-lo)/(hi-lo));
-  const D=Math.max(res.duration,1),X=t=>pl+(w-pl-pr)*(t/D);
-  if(T){c.fillStyle=css("--accent-soft");c.fillRect(pl,Y(T.hi),w-pl-pr,Y(T.lo)-Y(T.hi))}
-  c.font="11px "+css("--body");c.fillStyle=css("--muted");c.strokeStyle=css("--line");c.lineWidth=1;
-  [100,150,200,250,300].forEach(f=>{const y=Y(f);c.beginPath();c.moveTo(pl,y);c.lineTo(w-pr,y);c.stroke();c.fillText(f+" Hz",0,y+4)});
-  c.fillText("0 s",pl,h-4);const et=fmt(D);c.fillText(et,w-pr-c.measureText(et).width,h-4);
-  if(res.median){c.setLineDash([5,4]);c.strokeStyle=css("--warm");c.beginPath();c.moveTo(pl,Y(res.median));c.lineTo(w-pr,Y(res.median));c.stroke();c.setLineDash([])}
-  c.fillStyle=css("--accent");res.pitch.forEach(([t,f])=>{c.beginPath();c.arc(X(t),Y(f),1.8,0,7);c.fill()})}
+let mapExtra=null;
+function drawMap(){const cv=$("#map"),dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,h=300;cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");c.scale(dpr,dpr);c.clearRect(0,0,w,h);
+  const vs=recorded().map(v=>({name:v.name,role:v.role,x:v.stats.median,y:assurance(v.stats)}));
+  if(mapExtra)vs.push(mapExtra);
+  const pl=12,pr=12,pt=22,pb=28;
+  let lo=170,hi=260;vs.forEach(v=>{lo=Math.min(lo,v.x-10);hi=Math.max(hi,v.x+10)});
+  const X=f=>pl+(w-pl-pr)*(Math.log(f/lo)/Math.log(hi/lo)),Y=a=>pt+(h-pt-pb)*(1-(a==null?50:a)/100);
+  c.strokeStyle=css("--line");c.lineWidth=1;c.font="11px "+css("--body");c.fillStyle=css("--muted");
+  [0,50,100].forEach(a=>{c.beginPath();c.moveTo(pl,Y(a));c.lineTo(w-pr,Y(a));c.stroke()});
+  const step=hi-lo>120?40:20;for(let f=Math.ceil(lo/step)*step;f<=hi;f+=step){const t=f+" Hz",tw=c.measureText(t).width;c.fillText(t,Math.min(Math.max(X(f)-tw/2,pl),w-pr-tw),h-8)}
+  c.fillText("↑ plus assurée",pl,12);c.textAlign="right";c.fillText("plus aiguë →",w-pr,12);c.textAlign="left";
+  const an=anchor();if(an!=null){const hx=hzOf(an);if(hx>lo&&hx<hi){c.setLineDash([5,4]);c.strokeStyle=css("--good");c.lineWidth=1.5;c.beginPath();c.moveTo(X(hx),pt);c.lineTo(X(hx),h-pb);c.stroke();c.setLineDash([]);c.fillStyle=css("--good");c.fillText("ma note",X(hx)+4,h-pb-4);c.lineWidth=1}}
+  if(!vs.length){c.fillStyle=css("--muted");c.font="14px "+css("--body");c.textAlign="center";c.fillText("Enregistre une voix pour la voir ici",w/2,h/2);c.textAlign="left";return}
+  vs.forEach(v=>{const x=X(v.x),y=Y(v.y);c.beginPath();c.arc(x,y,v.today?9:7,0,7);
+    if(v.today){c.strokeStyle=css("--warm");c.lineWidth=3;c.stroke()}else{c.fillStyle=roleColor(v.role);c.fill()}
+    c.fillStyle=css("--ink");c.font="600 12px "+css("--body");const tw=c.measureText(v.name).width;c.fillText(v.name,Math.min(Math.max(x-tw/2,pl),w-pr-tw),y-12)})}
 
-const chip=s=>s==null?"":s>=0.85?'<span class="chip ok">dans la cible</span>':s>=0.5?'<span class="chip mid">à ajuster</span>':'<span class="chip bad">loin</span>';
-function refCompare(res,v,ref){const r=(a,b,c)=>`<tr><td>${a}</td><td class="num">${b}</td><td class="num">${c}</td></tr>`;
-  const d=res.median&&ref.median?st(res.median,ref.median):null;
-  return `<div><span class="eyebrow">Toi vs ta voix modèle</span><div class="tablebox"><table><thead><tr><th></th><th>Toi</th><th>Modèle</th></tr></thead><tbody>
-  ${r("Hauteur",res.median?Math.round(res.median)+" Hz":"–",ref.median?ref.median+" Hz":"–")}
-  ${r("Mélodie",v.spread!=null?v.spread.toFixed(1)+" dt":"–",ref.spread!=null?ref.spread+" dt":"–")}
-  ${r("Rythme",v.syl!=null?v.syl.toFixed(1)+" syl/s":"–",ref.syl!=null?ref.syl+" syl/s":"–")}
-  ${r("Vraies pauses/min",v.rppm.toFixed(1),ref.rppm!=null?ref.rppm:"–")}
-  </tbody></table></div>${d!=null?`<p class="small">${Math.abs(d)<1?"Ta hauteur est très proche de celle du modèle.":`Tu parles ${Math.abs(d).toFixed(1)} demi-tons plus ${d>0?"haut":"bas"} que le modèle.`}</p>`:""}</div>`}
+function insights(){const vs=recorded(),out=[];
+  if(vs.length<2){$("#insights").innerHTML=`<li>Enregistre au moins deux voix pour que l'appli puisse les comparer. Commence par ta voix de charme et ta voix enfantine : ce sont les deux extrêmes.</li>`;return}
+  const model=vs.find(v=>v.role==="modele"),targets=vs.filter(v=>v.role==="cible"),calm=vs.filter(v=>v.role==="apaiser");
+  if(model){let best=null;vs.filter(v=>v.role!=="modele").forEach(v=>{const c=compare(v.stats,model.stats);if(c.prox!=null&&(!best||c.prox>best.c.prox))best={v,c}});
+    if(best)out.push(`Ta voix la plus proche de ${esc(model.name)} est ta voix <b>${esc(best.v.name)}</b> (${best.c.prox} %). ${best.c.prox>=60?"Tu as déjà cette voix : l'enjeu est de savoir y aller quand tu veux.":"Il reste du chemin : travaille-la en shadowing."}`)}
+  calm.forEach(a=>{let near=null;targets.forEach(t=>{const c=compare(a.stats,t.stats);if(c.prox!=null&&(!near||c.prox>near.c.prox))near={t,c}});
+    if(!near)return;const top=near.c.diffs.slice().sort((x,y)=>Math.abs(y.d)-Math.abs(x.d)).slice(0,2);
+    const bits=top.map(({F,d})=>{const va=a.stats[F.k],vb=near.t.stats[F.k];
+      if(F.k==="median")return `${Math.abs(st(va,vb)).toFixed(1)} demi-tons plus ${d>0?"aiguë":"grave"}`;
+      if(F.k==="spread")return d>0?"une mélodie qui part plus dans tous les sens":"une mélodie plus plate";
+      if(F.k==="syl")return d>0?"un débit plus rapide":"un débit plus lent";
+      if(F.k==="rppm")return d<0?"moins de vrais silences":"plus de coupures";
+      return d<0?"des fins de phrase qui montent":"des fins qui descendent plus"});
+    out.push(`Par rapport à ta voix ${esc(near.t.name)}, ta voix <b>${esc(a.name)}</b> a ${bits.join(" et ")}. C'est ça qu'il faut corriger quand tu la sens revenir.`)});
+  const all=vs.filter(v=>v.role!=="modele").map(v=>v.stats.median);
+  if(all.length>=3){const r=st(Math.max(...all),Math.min(...all));out.push(`Entre ta voix la plus grave et la plus aiguë, il y a ${r.toFixed(1)} demi-tons. ${r>4?"C'est un grand écart : c'est ce qui donne l'impression d'une voix que tu ne contrôles pas.":"Tes voix restent assez proches en hauteur : la différence se joue surtout sur le rythme et les fins de phrase."}`)}
+  const an=anchor();if(an!=null){const lst=vs.filter(v=>v.role!=="modele").map(v=>({n:v.name,d:st(v.stats.median,hzOf(an))})).sort((x,y)=>x.d-y.d);
+    out.push(`Par rapport à ta note (${noteName(an)}) : ${lst.map(x=>`${esc(x.n)} ${x.d>=0?"+":"−"}${Math.abs(x.d).toFixed(1)}`).join(", ")} demi-tons. Au-delà de +2, c'est là que ta voix s'envole.`)}
+  if(!targets.length)out.push("Choisis au moins une voix comme « Cible » : c'est elle que tu travailleras dans l'onglet Entraînement.");
+  $("#insights").innerHTML=out.map(t=>`<li>${t}</li>`).join("")}
 
-function renderResults(el,res,m,isDemo,audioUrl){
-  el._args=[res,m,isDemo,audioUrl];
-  const v=evaluate(res,m),T=v.T,ref=profile().ref;
-  let delta=null;
-  if(!isDemo){if(el._last===res)delta=el._delta;else{const prev=store.get("hist",[]).filter(h=>h.score!=null).slice(-1)[0];delta=prev&&v.score!=null?v.score-prev.score:null;el._last=res;el._delta=delta}}
-  el.innerHTML=`<div class="row" style="justify-content:space-between"><h3>Résultat · objectif ${T.name}</h3>${isDemo?'<span class="demo-flag">Exemple, enregistre-toi pour voir tes chiffres</span>':""}</div>
-  ${audioUrl?`<audio controls src="${audioUrl}"></audio>`:""}
-  <div class="scorebox">
-    <div class="scorecell"><span class="eyebrow">Score</span><b class="bigscore num">${v.score??"–"}<small>/100</small></b>${delta!=null?`<span class="small num">${delta>=0?"+":""}${delta} vs la dernière fois</span>`:""}</div>
-    <div class="prio"><span class="eyebrow">Ta priorité · ${v.priority.label}</span><p>${v.priority.text}</p></div>
-  </div>
-  <div class="metrics">
-    <div class="metric"><small>Hauteur ${chip(v.sc.h)}</small><b>${res.median?Math.round(res.median)+" Hz":"–"}</b><small>zone visée ${Math.round(T.lo)}–${Math.round(T.hi)} Hz</small></div>
-    <div class="metric"><small>Mélodie ${chip(v.sc.m)}</small><b>${v.spread!=null?v.spread.toFixed(1)+" dt":"–"}</b><small>visé ${T.spread[0]} à ${T.spread[1]} demi-tons</small></div>
-    <div class="metric"><small>Rythme ${chip(v.sc.r)}</small><b>${v.wpm!=null?Math.round(v.wpm)+" m/min":v.syl!=null?v.syl.toFixed(1)+" syl/s":"–"}</b><small>${v.wpm!=null?`visé ${T.wpm[0]} à ${T.wpm[1]} mots/min`:`visé ${T.syl[0]} à ${T.syl[1]} syllabes/s, estimation`}</small></div>
-    <div class="metric"><small>Vraies pauses ${chip(v.sc.p)}</small><b>${v.real} · ${v.rppm.toFixed(1)}/min</b><small>silences de 0,8 s ou plus, max ${res.longest.toFixed(1)} s</small></div>
-  </div>
-  ${ref&&!isDemo?refCompare(res,v,ref):""}
-  <div><span class="eyebrow">Hauteur au fil du temps</span><canvas class="pitch" aria-label="Courbe de hauteur"></canvas><span class="small">Bande colorée : ta zone visée. Pointillés : ta hauteur médiane.</span></div>
-  ${v.tips.length?`<ul class="tips">${v.tips.map(t=>`<li>${t}</li>`).join("")}</ul>`:""}`;
-  const cv=el.querySelector("canvas");el._draw=()=>drawPitch(cv,res,targets());requestAnimationFrame(el._draw);
-  return v}
+function renderVoices(){const vs=voices(),list=$("#voiceList");list.innerHTML="";
+  vs.forEach(v=>{const d=document.createElement("details");d.className="voice";d.dataset.id=v.id;const s=v.stats;
+    d.innerHTML=`<summary><span class="vname">${esc(v.name)}</span><span class="role ${v.role}">${ROLES[v.role]}</span><span class="vsum">${s&&s.median?`${s.median} Hz · mélodie ${s.spread??"–"} dt · fins qui descendent ${s.fall??"–"} %`:"Pas encore enregistrée · touche pour l'enregistrer"}</span></summary>
+    <div class="vbody">
+      <p class="small">${esc(v.prompt||"Enregistre cette voix pendant 30 secondes.")}</p>
+      ${v.read?`<p class="readtext">${READ}</p>`:""}
+      ${s&&s.median?`<div class="mini"><div><small>Hauteur</small><b>${s.median} Hz</b><small>${noteOf(s.median)}</small></div><div><small>Mélodie</small><b>${s.spread??"–"} dt</b></div><div><small>Vraies pauses</small><b>${s.rppm??"–"}/min</b><small>max ${s.longest??"–"} s</small></div><div><small>Fins qui descendent</small><b>${s.fall??"–"} %</b></div></div>
+      <div class="row"><button class="btn ghost small" data-play>Réécouter</button></div>`:""}
+      <div data-rec></div>
+      <div class="row"><label class="small" for="role-${v.id}">Rôle</label><select id="role-${v.id}" data-role>${Object.keys(ROLES).map(r=>`<option value="${r}" ${r===v.role?"selected":""}>${ROLES[r]}</option>`).join("")}</select>${DEFAULT_VOICES.some(x=>x.id===v.id)?"":`<button class="btn ghost small" data-del>Supprimer</button>`}</div>
+    </div>`;
+    list.appendChild(d);
+    const pb=d.querySelector("[data-play]");if(pb)pb.onclick=async()=>{const b=await getAudio(v.id);if(b)playBlob(b);else pb.textContent="Audio absent de cet appareil"};
+    d.querySelector("[data-role]").onchange=e=>{const all=voices(),x=all.find(y=>y.id===v.id);x.role=e.target.value;saveVoices(all);refreshAll(v.id)};
+    const del=d.querySelector("[data-del]");if(del)del.onclick=()=>{saveVoices(voices().filter(y=>y.id!==v.id));refreshAll()};
+    makeRecorder(d.querySelector("[data-rec]"),{label:s?"Réenregistrer":"Enregistrer"},async(res,blob,msg)=>{
+      if(!res.median){msg.textContent="Je n'ai pas entendu de voix. Rapproche-toi du micro et recommence.";msg.className="err";return}
+      const all=voices(),x=all.find(y=>y.id===v.id);x.stats=statsOf(res);x.segs=res.segInfo.filter(g=>g.e-g.s>=0.5).map(g=>({s:+g.s.toFixed(2),e:+g.e.toFixed(2),med:g.med?Math.round(g.med):null,dir:g.dir}));saveVoices(all);await putAudio(v.id,blob);refreshAll(v.id)})});
+}
+function refreshAll(openId){renderVoices();if(openId){const el=[...$("#voiceList").children].find(x=>x.dataset.id===openId);if(el)el.open=true}drawMap();insights();fillTargets();renderShadow();renderProgress()}
+$("#addVoice").onclick=()=>{const n=$("#newVoiceName").value.trim();if(!n)return;const all=voices();const id="v"+Date.now();all.push({id,name:n,role:"garder",prompt:"Enregistre cette voix pendant 30 secondes.",stats:null});saveVoices(all);$("#newVoiceName").value="";refreshAll(id)};
 
-function demoRes(){const p=[];let t=0.4;const dur=42;
-  while(t<dur){const ph=t%7;if(ph<5.6){const base=195+14*Math.sin(t*1.3)-ph*4;p.push([t,base+(Math.sin(t*9)*5)])}t+=0.04}
-  const hz=p.map(a=>a[1]).sort((a,b)=>a-b),q=x=>hz[Math.floor(x*(hz.length-1))];
-  return{duration:dur,span:41,pauses:6,longest:1.3,pauseTime:6,pauseList:[1.3,0.9,1.1,0.5,0.4,1.0],sylRate:4.4,pitch:p,median:q(.5),p10:q(.1),p90:q(.9)}}
-
-function saveHist(res,m,v){const h=store.get("hist",[]);
-  h.push({d:new Date().toISOString(),m,g:goal(),score:v.score,median:res.median?Math.round(res.median):null,spread:v.spread!=null?+v.spread.toFixed(1):null,wpm:v.wpm?Math.round(v.wpm):null,syl:v.syl!=null?+v.syl.toFixed(1):null,rppm:+v.rppm.toFixed(1)});
-  store.set("hist",h.slice(-60));renderHist();renderSteps();renderProfile()}
-function renderHist(){const h=store.get("hist",[]),tb=$("#hist");tb.innerHTML="";
-  if(!h.length){tb.innerHTML='<tr><td colspan="6" class="small">Tes enregistrements apparaîtront ici. Fais une lecture aujourd\'hui pour avoir ton point de départ.</td></tr>';$("#histNote").textContent="";return}
-  h.slice().reverse().slice(0,15).forEach(r=>{const d=new Date(r.d);const tr=document.createElement("tr");
-    tr.innerHTML=`<td class="num">${d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}</td><td>${r.m==="read"?"Lecture":r.m==="roulette"?"Roulette":"Libre"}</td><td class="num">${r.score??"–"}</td><td class="num">${r.median??"–"}</td><td class="num">${r.wpm?r.wpm+" m/min":r.syl!=null?r.syl+" syl/s":"–"}</td><td class="num">${r.rppm??"–"}</td>`;tb.appendChild(tr)});
-  const reads=h.filter(r=>r.m==="read"&&r.median);
-  $("#histNote").textContent=reads.length>=2?`Depuis ta première lecture : hauteur ${reads[0].median} → ${reads[reads.length-1].median} Hz, débit ${reads[0].wpm??"–"} → ${reads[reads.length-1].wpm??"–"} mots/min.`:""}
-
-/* ---------- Ma voix ---------- */
-function diagnose(p,lr){
-  if(!p.natural)return "Commence par l'étape 1 : tout le reste se règle sur ta voix naturelle.";
-  const out=[];
-  if(lr){const d=st(lr.median,p.natural);
-    out.push(d<-3?"Ta voix de lecture est nettement plus grave que ta voix naturelle : tu forces sans doute un peu. Remonte vers ta zone.":d<-1?"Ta voix de lecture est un peu plus grave que ta voix naturelle. C'est l'effet posé recherché, sans forçage.":"Ta voix de lecture est proche de ta voix naturelle : aucun forçage.")}
-  if(p.joy){const d=st(p.joy.median,p.natural);
-    out.push(d>3?`Quand tu es enjouée, ta voix monte de ${d.toFixed(1)} demi-tons${p.joy.spread>9?" et part beaucoup dans les aigus":""}. C'est ce registre qui sonne jeune : c'est lui qu'on va calmer, pas ta voix naturelle.`:"Ta voix enjouée reste proche de ta voix naturelle : ce qui peut faire jeune vient plutôt du rythme.")}
-  if(p.ref&&p.ref.median){const d=st(p.ref.median,p.natural);
-    out.push(Math.abs(d)>3?`Ta voix modèle parle ${Math.abs(d).toFixed(1)} demi-tons plus ${d<0?"bas":"haut"} que ta voix naturelle. Ne copie pas sa hauteur, copie son rythme et ses pauses.`:"Ta voix modèle parle à une hauteur proche de la tienne : tu peux t'en inspirer directement.")}
-  return out.join(" ")}
-function renderProfile(){const p=profile(),T=targets(),lr=store.get("hist",[]).filter(h=>h.m==="read"&&h.median).slice(-1)[0];
-  const cell=(l,v,s)=>`<div class="metric"><small>${l}</small><b>${v}</b><small>${s}</small></div>`;
-  $("#profilePanel").innerHTML=`<h3>Ton profil vocal</h3><div class="metrics">
-  ${cell("Voix naturelle",p.natural?p.natural+" Hz":"–",p.natural?noteOf(p.natural):"étape 1")}
-  ${cell("Voix enjouée",p.joy?p.joy.median+" Hz":"–",p.joy&&p.natural?sgn(st(p.joy.median,p.natural))+" dt vs naturelle":"étape 2")}
-  ${cell("Dernière lecture",lr?lr.median+" Hz":"–",lr&&p.natural?sgn(st(lr.median,p.natural))+" dt vs naturelle":"onglet Analyse")}
-  ${cell("Voix modèle",p.ref&&p.ref.median?p.ref.median+" Hz":"–",p.ref?"importée":"étape 3, facultatif")}
-  </div>
-  <p class="zone">Zone visée en mode ${T.name} : <b class="num">${Math.round(T.lo)}–${Math.round(T.hi)} Hz</b>${T.N?"":" (estimation tant que l'étape 1 n'est pas faite)"}</p>
-  <p class="small">${diagnose(p,lr)}</p>`}
-function quickStats(res){const real=(res.pauseList||[]).filter(d=>d>=0.8).length;
-  return{median:res.median?Math.round(res.median):null,spread:res.median?+(12*Math.log2(res.p90/res.p10)).toFixed(1):null,syl:res.sylRate!=null?+res.sylRate.toFixed(1):null,rppm:res.span>0?+(real/(res.span/60)).toFixed(1):null}}
-function setProfile(key,res,msgEl){if(!res.median){msgEl.textContent="Je n'ai pas détecté de voix. Rapproche-toi du micro et refais l'enregistrement.";msgEl.className="err";return}
-  const p=profile();if(key==="natural")p.natural=Math.round(res.median);else p[key]=quickStats(res);store.set("profile",p);
-  renderProfile();msgEl.textContent=key==="natural"?`Voix naturelle enregistrée : ${p.natural} Hz.`:key==="joy"?"Voix enjouée enregistrée.":"Voix modèle enregistrée. Elle apparaîtra dans chaque résultat.";msgEl.className="small";
-  [$("#resultsA"),$("#resultsR")].forEach(el=>{if(el._args&&!el.hidden)renderResults(el,...el._args)})}
-
-/* Enregistreur réutilisable */
-function makeRecorder(root,getMode,onDone){
-  root.innerHTML=`<div class="row"><button class="btn" data-a="rec">Enregistrer</button><label class="btn ghost" style="position:relative;overflow:hidden">Importer un audio<input type="file" data-a="file" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.caf,.mp4,.mov,.ogg,.webm" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%"></label><span class="row" data-a="live" hidden><span class="rec-dot"></span><span class="num" data-a="t">0:00</span></span></div><p class="small" data-a="msg">Le micro peut être bloqué ici. Si c'est le cas, enregistre-toi avec ton appli Dictaphone puis importe le fichier.</p>`;
+/* Enregistreur */
+function makeRecorder(root,opts,onDone){
+  root.innerHTML=`<div class="row"><button class="btn" data-a="rec">${opts.label||"Enregistrer"}</button><label class="btn ghost filebtn">Importer<input type="file" data-a="file" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.caf,.mp4,.mov,.ogg,.webm"></label><span class="row" data-a="live" hidden><span class="rec-dot"></span><span class="num" data-a="t">0:00</span></span></div><p class="small" data-a="msg"></p>`;
   const recB=root.querySelector('[data-a="rec"]'),fileB=root.querySelector('[data-a="file"]'),live=root.querySelector('[data-a="live"]'),tEl=root.querySelector('[data-a="t"]'),msg=root.querySelector('[data-a="msg"]');
   let mr=null,chunks=[],stream=null,ti=null,t0=0;
   async function process(blob){msg.textContent="Analyse en cours…";msg.className="small";
@@ -537,78 +441,293 @@ function makeRecorder(root,getMode,onDone){
       const buf=await new Promise((ok,ko)=>{const p=ac.decodeAudioData(ab,ok,ko);if(p&&p.then)p.then(ok,ko)});
       if(ac.close)ac.close();
       if(buf.duration>300){msg.textContent="Enregistrement trop long : garde moins de 5 minutes.";msg.className="err";return}
-      setTimeout(()=>{const res=analyze(buf);msg.textContent="";onDone(res,URL.createObjectURL(blob),msg)},20)}
-    catch(e){msg.textContent="Je n'arrive pas à lire « "+(blob.name||"ce fichier")+" ». Essaie un enregistrement en .m4a, .mp3 ou .wav (pas un enregistrement multipiste).";msg.className="err"}}
+      await new Promise(r=>setTimeout(r,20));const res=analyze(buf);msg.textContent="";await onDone(res,blob,msg)}
+    catch(e){msg.textContent="Je n'arrive pas à lire ce fichier. Essaie un .m4a, .mp3 ou .wav.";msg.className="err"}}
   async function start(){
-    if(!navigator.mediaDevices||!window.MediaRecorder){msg.textContent="Micro indisponible ici : importe un enregistrement fait avec ton Dictaphone.";msg.className="err";return false}
+    if(!navigator.mediaDevices||!window.MediaRecorder){msg.textContent="Micro indisponible ici : utilise « Importer ».";msg.className="err";return false}
     try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})}
-    catch(e){msg.textContent="Le micro est bloqué dans cette fenêtre. Enregistre-toi avec ton appli Dictaphone, puis touche « Importer un audio ».";msg.className="err";return false}
+    catch(e){msg.textContent="Le micro est bloqué. Autorise-le dans les réglages du navigateur, ou utilise « Importer ».";msg.className="err";return false}
     chunks=[];mr=new MediaRecorder(stream);mr.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
     mr.onstop=()=>{stream.getTracks().forEach(t=>t.stop());process(new Blob(chunks,{type:mr.mimeType||"audio/webm"}))};
     mr.start();t0=Date.now();live.hidden=false;recB.textContent="Arrêter";msg.textContent="";
     ti=setInterval(()=>{tEl.textContent=fmt((Date.now()-t0)/1000)},250);return true}
-  function stop(){if(mr&&mr.state==="recording")mr.stop();clearInterval(ti);live.hidden=true;recB.textContent="Enregistrer"}
+  function stop(){if(mr&&mr.state==="recording")mr.stop();clearInterval(ti);live.hidden=true;recB.textContent=opts.label||"Enregistrer"}
   recB.addEventListener("click",()=>{if(mr&&mr.state==="recording")stop();else start()});
-  fileB.addEventListener("change",()=>{const f=fileB.files&&fileB.files[0];if(!f){msg.textContent="Aucun fichier reçu. Réessaie en choisissant le fichier dans « Fichiers ».";msg.className="err";return}msg.textContent="Fichier reçu : "+f.name+". Analyse en cours…";process(f).finally(()=>{fileB.value=""})});
-  return{start,stop,recording:()=>mr&&mr.state==="recording"}}
+  fileB.addEventListener("change",()=>{const f=fileB.files&&fileB.files[0];if(!f)return;process(f).finally(()=>{fileB.value=""})});
+  return{start,stop,recording:()=>!!(mr&&mr.state==="recording"),msg}}
 
-/* Ma voix : enregistreurs et objectif */
-makeRecorder($("#recNat"),()=>"free",(res,url,msg)=>setProfile("natural",res,msg));
-makeRecorder($("#recJoy"),()=>"free",(res,url,msg)=>setProfile("joy",res,msg));
-makeRecorder($("#recRef"),()=>"free",(res,url,msg)=>setProfile("ref",res,msg));
-function setGoal(g){store.set("goal",g);document.querySelectorAll("[data-goal]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.goal===g?"true":"false"));
-  renderProfile();[$("#resultsA"),$("#resultsR")].forEach(el=>{if(el._args)renderResults(el,...el._args)})}
-document.querySelectorAll("[data-goal]").forEach(b=>b.addEventListener("click",()=>setGoal(b.dataset.goal)));
-const resA=$("#resultsA");
-renderResults(resA,demoRes(),"read",true,null);
-makeRecorder($("#recA"),()=>mode,(res,url)=>{const v=renderResults(resA,res,mode,false,url);saveHist(res,mode,v);if(mode==="read")markStep("lecture")});
-function redrawCharts(){[resA,$("#resultsR")].forEach(el=>{if(el._draw&&!el.hidden)requestAnimationFrame(el._draw)})}
-window.addEventListener("resize",redrawCharts);
+function drawPitch(cv,res,refMed){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,h=150;cv.width=w*dpr;cv.height=h*dpr;
+  const c=cv.getContext("2d");c.scale(dpr,dpr);c.clearRect(0,0,w,h);
+  const lo=Math.log(100),hi=Math.log(400),pl=36,pr=8,pt=8,pb=18;
+  const Y=f=>pt+(h-pt-pb)*(1-(Math.log(f)-lo)/(hi-lo)),D=Math.max(res.duration,1),X=t=>pl+(w-pl-pr)*(t/D);
+  c.font="11px "+css("--body");c.fillStyle=css("--muted");c.strokeStyle=css("--line");c.lineWidth=1;
+  [150,200,250,300].forEach(f=>{const y=Y(f);c.beginPath();c.moveTo(pl,y);c.lineTo(w-pr,y);c.stroke();c.fillText(f+" Hz",0,y+4)});
+  c.fillText("0 s",pl,h-3);const et=fmt(D);c.fillText(et,w-pr-c.measureText(et).width,h-3);
+  if(refMed){c.setLineDash([5,4]);c.strokeStyle=css("--good");c.lineWidth=2;c.beginPath();c.moveTo(pl,Y(refMed));c.lineTo(w-pr,Y(refMed));c.stroke();c.setLineDash([])}
+  c.fillStyle=css("--accent");res.pitch.forEach(([t,f])=>{c.beginPath();c.arc(X(t),Y(f),1.7,0,7);c.fill()})}
 
-/* ---------- Roulette ---------- */
+/* Historique */
+function hist(){return store.get("hist",[])}
+function addHist(e){const h=hist();h.push({d:new Date().toISOString(),...e});store.set("hist",h.slice(-200));const days=store.get("days",{});days[dayKey(new Date())]=1;store.set("days",days);renderProgress()}
+
+/* Entraînement */
+function targetVoice(){const vs=recorded().filter(v=>v.role!=="modele");const id=store.get("target",null);return vs.find(v=>v.id===id)||vs.find(v=>v.id==="mavoix")||vs.find(v=>v.role==="cible")||vs[0]||null}
+function fillTargets(){const sel=$("#targetSel"),vs=recorded().filter(v=>v.role!=="modele"),t=targetVoice();
+  sel.innerHTML=vs.length?vs.map(v=>`<option value="${v.id}" ${t&&t.id===v.id?"selected":""}>${esc(v.name)} · ${ROLES[v.role]}</option>`).join(""):`<option>Enregistre d'abord une voix dans « Mes voix »</option>`;
+  sel.disabled=!vs.length;$("#playTarget").disabled=!t;
+  $("#targetInfo").textContent=t?`${t.stats.median} Hz · fins qui descendent ${t.stats.fall??"–"} %`:"";
+  if(t)$("#constraint").textContent=`Défi : reste dans ta voix ${t.name} jusqu'au bout.`}
+$("#targetSel").onchange=e=>{store.set("target",e.target.value);fillTargets()};
+const firstSeg=v=>{const g=v.segs&&v.segs.find(x=>x.e-x.s>=1.2)||(v.segs&&v.segs[0]);return g?[g.s,Math.min(g.e,g.s+8)]:[null,null]};
+$("#playTarget").onclick=async()=>{const t=targetVoice();if(!t)return;const b=await getAudio(t.id);if(b)playBlob(b,...firstSeg(t));else $("#targetInfo").textContent="L'audio de cette voix n'est pas sur cet appareil : réenregistre-la."};
+
+const PHRASES=["Prends ton temps, rien ne presse.","Je pense que c'est une très bonne idée.","Viens, je vais te montrer quelque chose.","Tu sais ce qui me ferait vraiment plaisir ?","On en reparle demain, si tu veux bien.","J'ai pris ma décision, et je m'y tiens.","Laisse-moi t'expliquer comment ça marche.","C'était une soirée vraiment parfaite.","Je ne suis pas d'accord, et voici pourquoi.","Raconte-moi tout, j'ai le temps.","Ce projet me tient beaucoup à cœur.","Merci, ça me touche beaucoup.","Je crois qu'on devrait ralentir un peu.","Tu m'as manqué aujourd'hui.","Les résultats sont plus clairs que prévu.","Je préfère qu'on fasse comme ça.","Ce soir, c'est moi qui choisis.","Il y a une chose que je voulais te dire.","Je suis fière de ce qu'on a fait.","Approche, j'ai un secret.","C'est exactement ce que je voulais.","On se retrouve à vingt heures ?","Je t'écoute.","Franchement, je n'en reviens pas.","Ça ne se passera pas comme ça.","Je vais y réfléchir sérieusement.","Tu as une minute ? J'ai une question.","Bienvenue, installez-vous.","Je vous présente les résultats de cette étude.","Non, je n'ai pas fini ma phrase.","Dis-moi ce que tu en penses, vraiment.","J'adore quand on prend le temps comme ça."];
+$("#newPhrase").onclick=()=>{$("#phrase").textContent=pick(PHRASES)};
+$("#phrase").textContent=pick(PHRASES);
+
+function resultBlock(el,res,blob,ref,refName,playRef,extra){
+  const mine=statsOf(res),short=res.span<10,m2={...mine};if(short)m2.rppm=null;
+  const c=compare(m2,ref);const top=c.diffs.filter(x=>Math.abs(x.d)>0.35).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
+  el.hidden=false;el.innerHTML=`<div class="prox"><b>${c.prox??"–"}<small style="font-size:1rem"> %</small></b><span class="small">de proximité avec ta voix ${esc(refName)}</span></div>
+  <div class="prio"><span class="eyebrow">${top.length?"À corriger en premier":"Bravo"}</span><p>${top.length?tipFor(top[0],refName):`Tu es dans ta voix ${esc(refName)}. Refais-le avec une autre phrase pour l'ancrer.`}</p></div>
+  <div class="row"><button class="btn ghost small" data-me>Ma version</button>${playRef?`<button class="btn ghost small" data-ref>Ma voix ${esc(refName)}</button>`:""}</div>
+  ${compareTable(mine,ref,refName)}
+  <canvas class="pitch" aria-label="Courbe de hauteur"></canvas><p class="small">Pointillés verts : la hauteur de ta voix ${esc(refName)}.${short?" Sur une phrase courte, les pauses ne sont pas comptées.":""}</p>${extra||""}`;
+  el.querySelector("[data-me]").onclick=()=>playBlob(blob);
+  const rb=el.querySelector("[data-ref]");if(rb)rb.onclick=playRef;
+  const cv=el.querySelector("canvas");requestAnimationFrame(()=>drawPitch(cv,res,ref.median));
+  return c}
+
+makeRecorder($("#recBascule"),{label:"Dire la phrase"},async(res,blob,msg)=>{const t=targetVoice();
+  if(!t){msg.textContent="Enregistre d'abord ta voix cible dans « Mes voix ».";msg.className="err";return}
+  if(!res.median){msg.textContent="Je n'ai pas entendu de voix, recommence plus près du micro.";msg.className="err";return}
+  const tb=await getAudio(t.id);
+  const c=resultBlock($("#resBascule"),res,blob,t.stats,t.name,tb?()=>playBlob(tb,...firstSeg(t)):null);
+  addHist({type:"bascule",target:t.name,prox:c.prox})});
+
+/* Shadowing */
+let shIdx=0;
+function shadowChunks(v){const out=[];let cur=null;
+  (v.segs||[]).forEach(g=>{if(!cur)cur={s:g.s,e:g.e,dir:g.dir,meds:g.med?[g.med]:[]};else if(g.e-cur.s<=6.5&&cur.e-cur.s<2.2){cur.e=g.e;cur.dir=g.dir||cur.dir;if(g.med)cur.meds.push(g.med)}else{out.push(cur);cur={s:g.s,e:g.e,dir:g.dir,meds:g.med?[g.med]:[]}}});
+  if(cur)out.push(cur);return out.filter(c=>c.e-c.s>=0.8)}
+function renderShadow(){const box=$("#shadowBox"),m=recorded().find(v=>v.role==="modele");
+  if(!m){box.innerHTML=`<p class="small">Ajoute d'abord ta voix modèle dans « Mes voix » (dernière carte), en important un extrait vidéo ou audio.</p>`;return}
+  const ch=shadowChunks(m);if(!ch.length){box.innerHTML=`<p class="small">Je n'ai pas réussi à découper l'extrait. Réimporte un passage où elle parle sans musique.</p>`;return}
+  shIdx=Math.max(0,Math.min(shIdx,ch.length-1));const c=ch[shIdx];const med=c.meds.length?Math.round(c.meds.reduce((a,b)=>a+b,0)/c.meds.length):null;
+  box.innerHTML=`<div class="row" style="justify-content:space-between"><span class="eyebrow num">Morceau ${shIdx+1} / ${ch.length} · ${(c.e-c.s).toFixed(1)} s</span><span class="small">${c.dir==="down"?"Sa voix retombe à la fin":c.dir==="up"?"Sa voix remonte à la fin":""}</span></div>
+  <div class="row"><button class="btn small" data-listen>Écouter</button><button class="btn ghost small" data-prev ${shIdx?"":"disabled"}>Précédent</button><button class="btn ghost small" data-next ${shIdx<ch.length-1?"":"disabled"}>Suivant</button></div>
+  <div data-rec></div><div class="stack" data-res hidden></div>`;
+  const play=async()=>{const b=await getAudio(m.id);if(b)playBlob(b,c.s,c.e);else box.querySelector("[data-listen]").textContent="Audio absent de cet appareil"};
+  box.querySelector("[data-listen]").onclick=play;
+  box.querySelector("[data-prev]").onclick=()=>{shIdx--;renderShadow()};box.querySelector("[data-next]").onclick=()=>{shIdx++;renderShadow()};
+  makeRecorder(box.querySelector("[data-rec]"),{label:"Répéter"},async(res,blob,msg)=>{
+    if(!res.median){msg.textContent="Je n'ai pas entendu de voix, recommence.";msg.className="err";return}
+    const el=box.querySelector("[data-res]");el.hidden=false;
+    const myDir=(res.segInfo.filter(g=>g.dir).slice(-1)[0]||{}).dir;const dPitch=med?st(res.median,med):null;const ratio=res.span/(c.e-c.s);
+    const pts=[];let score=100;
+    if(dPitch!=null){if(Math.abs(dPitch)>1.5){pts.push(`Tu es ${Math.abs(dPitch).toFixed(1)} demi-tons plus ${dPitch>0?"haut":"bas"} qu'elle.`);score-=Math.min(40,Math.abs(dPitch)*10)}else pts.push("Même hauteur qu'elle.")}
+    if(ratio<0.85){pts.push(`Tu vas plus vite qu'elle (${res.span.toFixed(1)} s au lieu de ${(c.e-c.s).toFixed(1)} s). Étire les voyelles.`);score-=Math.min(35,(1-ratio)*100)}else if(ratio>1.25){pts.push("Tu es plus lente qu'elle.");score-=Math.min(20,(ratio-1)*50)}else pts.push("Même tempo qu'elle.");
+    if(c.dir&&myDir&&c.dir!==myDir){pts.push(c.dir==="down"?"Elle termine en descendant, toi non : laisse retomber le dernier mot.":"Elle remonte à la fin, toi tu descends.");score-=20}else if(c.dir&&myDir)pts.push("Même fin de phrase qu'elle.");
+    score=Math.max(0,Math.round(score));
+    el.innerHTML=`<div class="prox"><b>${score}<small style="font-size:1rem"> %</small></b><span class="small">de ressemblance sur ce morceau</span></div><ul class="insights">${pts.map(p=>`<li>${p}</li>`).join("")}</ul>
+    <div class="row"><button class="btn ghost small" data-me>Ma version</button><button class="btn ghost small" data-her>Sa version</button></div>`;
+    el.querySelector("[data-me]").onclick=()=>playBlob(blob);el.querySelector("[data-her]").onclick=play;
+    addHist({type:"shadow",target:m.name,prox:score})})}
+
+/* ---------- Ma note ---------- */
+const midiOf=f=>69+12*Math.log2(f/440),hzOf=m=>440*Math.pow(2,(m-69)/12);
+const noteName=m=>NOTES[((m%12)+12)%12]+(Math.floor(m/12)-1);
+const anchor=()=>store.get("note",null);
+const BAND=2;
+function noteBase(){const vs=voices(),pick=id=>vs.find(v=>v.id===id&&v.stats&&v.stats.median);const pro=pick("pro"),q=pick("quotidienne");
+  const meds=[pro,q].filter(Boolean).map(v=>v.stats.median);if(!meds.length)return null;
+  const geo=Math.exp(meds.reduce((a,b)=>a+Math.log(b),0)/meds.length);return{pro,q,rec:Math.round(midiOf(geo))}}
+function inNotePct(res){const a=anchor();if(a==null||!res.pitch.length)return null;const h=hzOf(a);let n=0;res.pitch.forEach(p=>{if(Math.abs(st(p[1],h))<=BAND)n++});return Math.round(n/res.pitch.length*100)}
+
+let actx=null;
+function ac(){if(!actx){const AC=window.AudioContext||window.webkitAudioContext;actx=new AC()}if(actx.state==="suspended")actx.resume();return actx}
+function playTone(m,dur){dur=dur||2.4;try{const c=ac(),t=c.currentTime,o=c.createOscillator(),o2=c.createOscillator(),g=c.createGain(),g2=c.createGain(),f=c.createBiquadFilter();
+  o.type="triangle";o2.type="sine";o.frequency.value=hzOf(m);o2.frequency.value=hzOf(m)*2;g2.gain.value=0.15;f.type="lowpass";f.frequency.value=1100;
+  o.connect(f);o2.connect(g2);g2.connect(f);f.connect(g);g.connect(c.destination);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.28,t+0.08);g.gain.setValueAtTime(0.28,t+dur-0.35);g.gain.linearRampToValueAtTime(0,t+dur);
+  o.start(t);o2.start(t);o.stop(t+dur);o2.stop(t+dur)}catch(e){}}
+
+function renderNotePick(){const box=$("#notePick"),b=noteBase(),a=anchor();
+  let rec=b?b.rec:null;const cands=rec!=null?[rec-1,rec,rec+1]:[];
+  const cur=a!=null?`<p>Ta note : <b class="num">${noteName(a)} · ${Math.round(hzOf(a))} Hz</b></p>`:"";
+  box.innerHTML=`<h3>Choisir ta note d'ancrage</h3>
+  ${b?`<p class="small">Ta voix pro est à ${b.pro?b.pro.stats.median+" Hz ("+noteName(Math.round(midiOf(b.pro.stats.median)))+")":"–"}, ta voix quotidienne à ${b.q?b.q.stats.median+" Hz ("+noteName(Math.round(midiOf(b.q.stats.median)))+")":"–"}. Ta note se trouve entre les deux. Écoute les trois propositions, chante-les sur un « mmm », et garde celle où ta voix se sent chez elle.</p>`
+     :`<p class="small">Enregistre d'abord ta voix pro et ta voix quotidienne dans « Mes voix » : je calcule ta note entre les deux. En attendant, tu peux en choisir une à la main.</p>`}
+  ${cands.length?`<div class="cands">${cands.map(m=>`<div class="cand ${a===m?"sel":""}"><b class="num">${noteName(m)}</b><small class="num">${Math.round(hzOf(m))} Hz${m===rec?" · conseillée":""}</small><div class="row"><button class="btn ghost small" data-hear="${m}">Écouter</button><button class="btn small" data-pick="${m}">${a===m?"Choisie":"Choisir"}</button></div></div>`).join("")}</div>`:""}
+  <div class="row"><label class="small" for="noteSel">Autre note</label><select id="noteSel"><option value="">–</option>${Array.from({length:10},(_,i)=>52+i).map(m=>`<option value="${m}" ${a===m?"selected":""}>${noteName(m)} · ${Math.round(hzOf(m))} Hz</option>`).join("")}</select></div>
+  ${cur}`;
+  box.querySelectorAll("[data-hear]").forEach(x=>x.onclick=()=>playTone(+x.dataset.hear));
+  box.querySelectorAll("[data-pick]").forEach(x=>x.onclick=()=>{store.set("note",+x.dataset.pick);renderNotePick();drawTrace();insights();drawMap()});
+  $("#noteSel").onchange=e=>{if(e.target.value){store.set("note",+e.target.value);renderNotePick();drawTrace();insights();drawMap()}}}
+
+/* Accordeur en direct */
+const tun={on:false,stream:null,an:null,buf:null,trace:[],stats:{in:0,hi:0,lo:0},last:0,hist:[]};
+function detect(buf,sr){const k=Math.max(1,Math.floor(sr/16000)),n=Math.floor(buf.length/k),s=new Float32Array(n);let e=0;
+  for(let i=0;i<n;i++){let a=0;for(let j=0;j<k;j++)a+=buf[i*k+j];s[i]=a/k;e+=s[i]*s[i]}
+  if(Math.sqrt(e/n)<0.012)return null;const r=sr/k,minL=Math.floor(r/400),maxL=Math.ceil(r/70);let best=0,bl=0;const c=[];
+  for(let L=minL;L<=maxL&&L<n-32;L++){let x=0,e1=0,e2=0;for(let i=0;i<n-L;i++){const a=s[i],b=s[i+L];x+=a*b;e1+=a*a;e2+=b*b}const v=x/Math.sqrt(e1*e2+1e-12);c[L]=v;if(v>best){best=v;bl=L}}
+  if(best<0.6)return null;for(let L=minL+1;L<bl;L++){if(c[L]>=0.88*best&&c[L]>=c[L-1]&&c[L]>=(c[L+1]||0)){bl=L;break}}
+  const a=c[bl-1]||c[bl],b=c[bl+1]||c[bl],d=(a-b)/(2*(a-2*c[bl]+b)||1);const hz=r/(bl+(isFinite(d)?d:0));return hz>70&&hz<420?hz:null}
+async function tunerStart(){
+  if(!navigator.mediaDevices){$("#tState").textContent="Micro indisponible ici. Ouvre l'appli depuis son adresse GitHub pour utiliser l'accordeur.";return}
+  try{const c=ac();tun.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    const src=c.createMediaStreamSource(tun.stream);tun.an=c.createAnalyser();tun.an.fftSize=2048;src.connect(tun.an);tun.buf=new Float32Array(2048);tun.sr=c.sampleRate;
+    tun.on=true;tun.trace=[];tun.hist=[];tun.stats={in:0,hi:0,lo:0};tun.t0=performance.now();$("#tunerBtn").textContent="Arrêter";$("#tState").textContent="Fais « mmm » sur ta note.";requestAnimationFrame(tunerLoop)}
+  catch(e){$("#tState").textContent="Le micro est bloqué. Autorise-le dans les réglages du navigateur (ou ouvre l'appli depuis son adresse GitHub)."}}
+function tunerStop(){tun.on=false;if(tun.stream)tun.stream.getTracks().forEach(t=>t.stop());$("#tunerBtn").textContent="Activer le micro";
+  const tot=tun.stats.in+tun.stats.hi+tun.stats.lo;if(tot>40){addHist({type:"note",target:anchor()!=null?noteName(anchor()):null,prox:Math.round(tun.stats.in/tot*100)})}}
+function tunerLoop(now){if(!tun.on)return;requestAnimationFrame(tunerLoop);if(now-tun.last<45)return;tun.last=now;
+  tun.an.getFloatTimeDomainData(tun.buf);let hz=detect(tun.buf,tun.sr);
+  if(hz){tun.hist.push(hz);if(tun.hist.length>3)tun.hist.shift();hz=tun.hist.slice().sort((a,b)=>a-b)[Math.floor(tun.hist.length/2)]}else tun.hist=[];
+  const t=(now-tun.t0)/1000;tun.trace.push([t,hz]);while(tun.trace.length&&tun.trace[0][0]<t-8)tun.trace.shift();
+  const a=anchor()!=null?anchor():(noteBase()?noteBase().rec:null);
+  if(hz){const m=midiOf(hz);$("#tNote").textContent=noteName(Math.round(m))+" · "+Math.round(hz)+" Hz";
+    if(a!=null){const d=m-a;const el=$("#tState");if(Math.abs(d)<=BAND){tun.stats.in++;el.textContent="Dans ta note";el.dataset.s="in"}else if(d>0){tun.stats.hi++;el.textContent=`Trop haut de ${d.toFixed(1)} demi-tons, redescends`;el.dataset.s="hi"}else{tun.stats.lo++;el.textContent=`Plus bas que ta note de ${Math.abs(d).toFixed(1)} demi-tons`;el.dataset.s="lo"}}}
+  const tot=tun.stats.in+tun.stats.hi+tun.stats.lo;
+  if(tot)$("#tStats").innerHTML=`<span>Dans ta note <b class="num">${Math.round(tun.stats.in/tot*100)} %</b></span><span>Au-dessus <b class="num">${Math.round(tun.stats.hi/tot*100)} %</b></span><span>En dessous <b class="num">${Math.round(tun.stats.lo/tot*100)} %</b></span>`;
+  drawTrace()}
+function drawTrace(){const cv=$("#trace");if(!cv||$("#note").hidden)return;const dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,h=170;cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");c.scale(dpr,dpr);c.clearRect(0,0,w,h);
+  const a=anchor()!=null?anchor():(noteBase()?noteBase().rec:57),pl=46,pr=6,pt=6,pb=6,R=7;
+  const Y=m=>pt+(h-pt-pb)*(1-(m-(a-R))/(2*R));
+  c.fillStyle=css("--good-soft");c.fillRect(pl,Y(a+BAND),w-pl-pr,Y(a-BAND)-Y(a+BAND));
+  c.strokeStyle=css("--good");c.lineWidth=1.5;c.setLineDash([5,4]);c.beginPath();c.moveTo(pl,Y(a));c.lineTo(w-pr,Y(a));c.stroke();c.setLineDash([]);
+  c.font="11px "+css("--body");c.fillStyle=css("--muted");c.fillText(noteName(a),4,Y(a)+4);c.fillText(noteName(a+5),4,Y(a+5)+4);c.fillText(noteName(a-5),4,Y(a-5)+4);
+  if(!tun.trace.length){c.fillText("La courbe de ta voix s'affiche ici en direct",pl+8,Y(a+4));return}
+  const t1=tun.trace[tun.trace.length-1][0],X=t=>pl+(w-pl-pr)*(1-(t1-t)/8);
+  c.strokeStyle=css("--accent");c.lineWidth=3;c.lineCap="round";c.beginPath();let pen=false;
+  tun.trace.forEach(([t,hz])=>{if(!hz){pen=false;return}const m=Math.max(a-R,Math.min(a+R,midiOf(hz)));if(pen)c.lineTo(X(t),Y(m));else{c.moveTo(X(t),Y(m));pen=true}});c.stroke()}
+$("#tunerBtn").onclick=()=>{if(tun.on)tunerStop();else tunerStart()};
+$("#tReset").onclick=()=>{tun.stats={in:0,hi:0,lo:0};$("#tStats").innerHTML=""};
+$("#hearNote").onclick=()=>{const a=anchor()!=null?anchor():(noteBase()?noteBase().rec:null);if(a!=null)playTone(a)};
+
+const NOTE_EX=[
+ {t:"Trouve ta note",p:"Touche « Écouter ma note », puis fais « mmm » sur la même hauteur pendant 5 secondes. Reste dans la bande verte. Fais-le 3 fois, en relâchant bien la mâchoire."},
+ {t:"Parle depuis ta note",p:"Sur ta note, dis « mm-hmm… oui ». Puis « d'accord », « bonjour », « c'est ça », « je vois ». Chaque mot démarre dans la bande verte, comme si tu le posais dessus."},
+ {t:"Phrases ancrées",p:"Démarre la phrase dans la bande verte, et termine dedans ou juste en dessous. Jamais au-dessus : c'est la fin qui monte qui fait jeune.",phrase:true},
+ {t:"Mélodie contenue",p:"Lis la phrase en t'autorisant à monter sur un seul mot important, puis reviens dans la bande. Ta voix enfantine fait des montagnes russes, ta voix posée fait une colline.",phrase:true},
+ {t:"Retour à la note",p:"Raconte ta journée pendant une minute. Toutes les deux ou trois phrases, reviens volontairement sur ta note. Vise 60 % du temps dans ta note."}];
+let nxIdx=0;
+function renderNoteEx(){const e=NOTE_EX[nxIdx],box=$("#noteEx");
+  box.innerHTML=`<div class="row" style="justify-content:space-between"><span class="stepnum">Exercice ${nxIdx+1} / ${NOTE_EX.length}</span><div class="row"><button class="btn ghost small" data-p ${nxIdx?"":"disabled"}>Précédent</button><button class="btn ghost small" data-n ${nxIdx<NOTE_EX.length-1?"":"disabled"}>Suivant</button></div></div>
+  <h3>${e.t}</h3><p class="small">${e.p}</p>${e.phrase?`<p class="phrase" data-ph>${pick(PHRASES)}</p><div class="row"><button class="btn ghost small" data-new>Autre phrase</button></div>`:""}`;
+  box.querySelector("[data-p]").onclick=()=>{nxIdx--;renderNoteEx()};box.querySelector("[data-n]").onclick=()=>{nxIdx++;renderNoteEx()};
+  const nb=box.querySelector("[data-new]");if(nb)nb.onclick=()=>{box.querySelector("[data-ph]").textContent=pick(PHRASES)}}
+
+/* Spontané */
 const CATS={
-"Raconte":["le pire repas que tu aies jamais mangé","une fois où tu t'es perdue","le meilleur conseil qu'on t'ait donné","un objet que tu gardes sans savoir pourquoi","ta journée idéale de A à Z","la dernière fois que tu as beaucoup ri","un voyage qui ne s'est pas passé comme prévu","un souvenir d'école très précis","ta première fois dans un avion ou un bateau","une rencontre qui t'a fait changer d'avis","un jour où tu as été fière de toi","le plus beau paysage que tu aies vu","une tradition de ta famille","un rêve bizarre dont tu te souviens","ton premier job"],
-"Défends":["l'idée que les chaussettes dépareillées sont un choix de vie","la sieste obligatoire au travail","l'idée que l'ananas a sa place sur la pizza","la semaine de quatre jours","l'interdiction des réunions avant 10 h","le droit de ne pas répondre aux messages","l'idée que les pigeons sont des animaux sous-estimés","le retour des lettres manuscrites","l'idée qu'on devrait apprendre à cuisiner à l'école","le fait de manger le dessert en premier","les vacances sans téléphone","l'idée que la pluie est le meilleur temps","le karaoké comme sport national","l'idée que les plantes ont une personnalité","le droit de ne rien faire un dimanche"],
-"Explique":["comment on fait du riz à quelqu'un qui n'a jamais cuisiné","pourquoi le ciel est bleu, comme à un enfant de six ans","ton métier à ta grand-mère","comment se faire des amis dans une nouvelle ville","comment fonctionne un frigo","pourquoi les gens aiment les séries","comment on prépare un sac pour la randonnée","ce qu'est une statistique, sans un seul chiffre","comment choisir un bon avocat au marché","pourquoi on a peur de parler en public","comment on lave un chat","ce qui fait une bonne chanson","comment survivre à un lundi","pourquoi on procrastine","comment reconnaître une bonne mangue"],
-"Imagine":["tu te réveilles avec 10 cm de plus","les animaux peuvent parler pendant une journée","tu peux dîner avec n'importe qui de l'histoire","tu ouvres un restaurant demain","tu deviens maire de ta ville pour un an","internet disparaît pendant une semaine","tu as un super pouvoir inutile","tu vis en 2080","tu dois vivre sur une île avec trois objets","tu peux parler toutes les langues du monde","ton chat devient ton patron","tu gagnes un an de voyage gratuit","tu inventes une nouvelle fête","tu animes une émission de télé","tu peux revivre une journée de ta vie"],
-"Décris":["ta chambre à quelqu'un qui ne la verra jamais","l'odeur d'une boulangerie le matin","ton plat préféré sans dire son nom","la personne la plus calme que tu connaisses","un marché un samedi matin","le bruit de la pluie sur un toit en tôle","ta tenue idéale pour un jour important","le coucher de soleil parfait","une couleur à quelqu'un qui ne voit pas","ton café ou ton thé du matin","une rue que tu connais par cœur","le meilleur moment d'une journée de plage","la sensation d'un bon fou rire","une salle d'attente","ton endroit préféré pour réfléchir"],
-"Convaincs":["un ami de venir marcher à 5 h du matin","ta voisine d'adopter un poisson rouge","un jury de te donner le dernier croissant","ton patron de t'offrir une plante de bureau","quelqu'un de lire ton livre préféré","un enfant de manger des légumes","un touriste de visiter ton quartier","une salle entière d'éteindre son téléphone","quelqu'un d'essayer un sport qu'il déteste","ton groupe d'amis de faire un pique-nique","un inconnu de te prêter son parapluie","un ado de ranger sa chambre","quelqu'un qu'une erreur peut être une bonne chose","ton équipe de commencer la réunion à l'heure","un client d'acheter un stylo"],
-"Compare":["le matin et le soir","les chats et les chiens","la mer et la montagne","le thé et le café","la ville et la campagne","les livres et les films","l'été et l'hiver","écrire et parler","le sucré et le salé","voyager seule et voyager en groupe","les messages vocaux et les messages écrits","le cinéma et le canapé","le vélo et la voiture","les fêtes et les soirées calmes","ce que tu étais à 15 ans et aujourd'hui"],
-"Donne ton avis":["sur les réseaux sociaux","sur le fait de tutoyer tout le monde","sur les influenceurs","sur le télétravail","sur les applis de rencontre","sur les cadeaux d'anniversaire","sur la mode du café glacé","sur les selfies","sur les horoscopes","sur le bruit des voisins","sur les jeux de société","sur les gens qui arrivent en retard","sur le tri des déchets","sur les séries trop longues","sur les surprises"]};
+"Raconte":["le pire repas que tu aies jamais mangé","une fois où tu t'es perdue","le meilleur conseil qu'on t'ait donné","un objet que tu gardes sans savoir pourquoi","ta journée idéale de A à Z","la dernière fois que tu as beaucoup ri","un voyage qui ne s'est pas passé comme prévu","un souvenir d'école très précis","un jour où tu as été fière de toi","le plus beau paysage que tu aies vu","un rêve bizarre dont tu te souviens","ton premier job"],
+"Défends":["l'idée que les chaussettes dépareillées sont un choix de vie","la sieste obligatoire au travail","l'idée que l'ananas a sa place sur la pizza","la semaine de quatre jours","le droit de ne pas répondre aux messages","l'idée que les pigeons sont sous-estimés","le retour des lettres manuscrites","le fait de manger le dessert en premier","l'idée que la pluie est le meilleur temps","le karaoké comme sport national","le droit de ne rien faire un dimanche"],
+"Explique":["comment on fait du riz à quelqu'un qui n'a jamais cuisiné","pourquoi le ciel est bleu, à un enfant de six ans","ton métier à ta grand-mère","comment se faire des amis dans une nouvelle ville","ce qu'est une statistique, sans un seul chiffre","comment choisir un bon avocat au marché","pourquoi on a peur de parler en public","comment survivre à un lundi","pourquoi on procrastine","comment reconnaître une bonne mangue"],
+"Imagine":["tu te réveilles avec 10 cm de plus","les animaux peuvent parler pendant une journée","tu ouvres un restaurant demain","tu deviens maire de ta ville pour un an","internet disparaît pendant une semaine","tu as un super pouvoir inutile","tu vis en 2080","ton chat devient ton patron","tu animes une émission de télé","tu peux revivre une journée de ta vie"],
+"Décris":["ta chambre à quelqu'un qui ne la verra jamais","l'odeur d'une boulangerie le matin","ton plat préféré sans dire son nom","un marché un samedi matin","le bruit de la pluie sur un toit en tôle","ta tenue idéale pour un jour important","le coucher de soleil parfait","une couleur à quelqu'un qui ne voit pas","ton endroit préféré pour réfléchir"],
+"Convaincs":["un ami de venir marcher à 5 h du matin","un jury de te donner le dernier croissant","quelqu'un de lire ton livre préféré","un touriste de visiter ton quartier","ton groupe d'amis de faire un pique-nique","un inconnu de te prêter son parapluie","quelqu'un qu'une erreur peut être une bonne chose","un client d'acheter un stylo"],
+"Compare":["le matin et le soir","les chats et les chiens","la mer et la montagne","le thé et le café","la ville et la campagne","les livres et les films","le sucré et le salé","voyager seule et voyager en groupe","les messages vocaux et les messages écrits"],
+"Donne ton avis":["sur les réseaux sociaux","sur le télétravail","sur les cadeaux d'anniversaire","sur les selfies","sur les horoscopes","sur les jeux de société","sur les gens qui arrivent en retard","sur les séries trop longues","sur les surprises"]};
 const CAT_NAMES=Object.keys(CATS);
-const CONSTRAINTS=["Défi : fais au moins trois pauses volontaires.","Défi : aucun « euh ». Remplace-les par un silence.","Défi : commence par une question.","Défi : termine chaque phrase en descendant la voix.","Défi : parle 20 % plus lentement que d'habitude.","Défi : glisse un exemple personnel.","Défi : annonce ton plan en une phrase, puis suis-le.","Défi : garde les épaules basses et le menton parallèle au sol.","Défi : regarde un point fixe comme si c'était ton public.","Défi : finis par une phrase courte et affirmée.","Pas de défi : parle librement."];
-let wheelAngle=0,spinning=false,curDur=60;
+let wheelAngle=0,spinning=false,curDur=60,talkTi=null;
 function drawWheel(a){const cv=$("#wheel"),c=cv.getContext("2d"),W=cv.width,R=W/2,n=CAT_NAMES.length;c.clearRect(0,0,W,W);
   const cols=[css("--accent"),css("--accent-soft"),css("--warm"),css("--warm-soft")],txt=[css("--surface"),css("--ink"),css("--surface"),css("--ink")];
   for(let i=0;i<n;i++){const s=a+i*2*Math.PI/n-Math.PI/2,e=s+2*Math.PI/n;c.beginPath();c.moveTo(R,R);c.arc(R,R,R-4,s,e);c.closePath();c.fillStyle=cols[i%4];c.fill();c.strokeStyle=css("--bg");c.lineWidth=3;c.stroke();
-    c.save();c.translate(R,R);c.rotate(s+Math.PI/n);c.textAlign="right";c.fillStyle=txt[i%4];c.font="600 30px "+css("--body");c.fillText(CAT_NAMES[i],R-28,10);c.restore()}
-  c.beginPath();c.arc(R,R,38,0,7);c.fillStyle=css("--surface");c.fill();c.strokeStyle=css("--line");c.lineWidth=3;c.stroke()}
-function setPrompt(cat){$("#promptCat").textContent=cat;$("#promptText").textContent=(cat==="Imagine"?"Imagine que "+pick(CATS[cat]):cat==="Donne ton avis"?"Donne ton avis "+pick(CATS[cat]):cat+" "+pick(CATS[cat]))+(cat==="Imagine"?"…":".");
-  $("#constraint").textContent=pick(CONSTRAINTS);resetTalk()}
-$("#spinBtn").addEventListener("click",()=>{if(spinning)return;spinning=true;$("#spinBtn").disabled=true;
-  const n=CAT_NAMES.length,idx=rnd(n),seg=2*Math.PI/n,jitter=(rnd(1000)/1000-.5)*seg*.7;
-  let target=-(idx*seg+seg/2)+jitter;const base=wheelAngle;target=base+((target-base)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)+2*Math.PI*(4+rnd(3));
-  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches,D=reduce?10:3800,t0=performance.now();
+    c.save();c.translate(R,R);c.rotate(s+Math.PI/n);c.textAlign="right";c.fillStyle=txt[i%4];c.font="600 26px "+css("--body");c.fillText(CAT_NAMES[i],R-24,9);c.restore()}
+  c.beginPath();c.arc(R,R,32,0,7);c.fillStyle=css("--surface");c.fill();c.strokeStyle=css("--line");c.lineWidth=3;c.stroke()}
+function setPrompt(cat){$("#promptCat").textContent=cat;const p=pick(CATS[cat]);
+  $("#promptText").textContent=cat==="Imagine"?"Imagine que "+p+"…":cat==="Donne ton avis"?"Donne ton avis "+p+".":cat+" "+p+".";
+  const t=targetVoice();$("#constraint").textContent=t?`Défi : reste dans ta voix ${t.name} jusqu'au bout.`:"Défi : fais au moins trois pauses volontaires."}
+$("#spinBtn").onclick=()=>{if(spinning)return;spinning=true;$("#spinBtn").disabled=true;
+  const n=CAT_NAMES.length,idx=rnd(n),seg=2*Math.PI/n,jit=(rnd(1000)/1000-.5)*seg*.7;
+  let target=-(idx*seg+seg/2)+jit;const base=wheelAngle;target=base+((target-base)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)+2*Math.PI*(4+rnd(3));
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches,D=reduce?10:3500,t0=performance.now();
   (function f(now){const p=Math.min(1,(now-t0)/D),e=1-Math.pow(1-p,4);wheelAngle=base+(target-base)*e;drawWheel(wheelAngle);
-    if(p<1)requestAnimationFrame(f);else{spinning=false;$("#spinBtn").disabled=false;setPrompt(CAT_NAMES[idx]);$("#promptPanel").scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"})}})(t0)});
-$("#rerollBtn").addEventListener("click",()=>setPrompt(pick(CAT_NAMES)));
-document.querySelectorAll("[data-dur]").forEach(b=>b.addEventListener("click",()=>{curDur=+b.dataset.dur;document.querySelectorAll("[data-dur]").forEach(x=>x.className="btn "+(x===b?"":"ghost"));if(!talkTi)$("#ring").textContent=fmt(curDur)}));
-let talkTi=null,rrec=null;
-const hiddenRec=document.createElement("div");
-rrec=makeRecorder(hiddenRec,()=>"roulette",(res,url)=>{const el=$("#resultsR");el.hidden=false;const v=renderResults(el,res,"roulette",false,url);saveHist(res,"roulette",v);markStep("roulette")});
-function resetTalk(){clearInterval(talkTi);talkTi=null;$("#ring").textContent=fmt(curDur);$("#talkBtn").textContent="Parler"}
-$("#talkBtn").addEventListener("click",async()=>{
-  if(talkTi){clearInterval(talkTi);talkTi=null;if(rrec.recording())rrec.stop();$("#talkBtn").textContent="Parler";$("#ring").textContent="Terminé";return}
-  const ok=await rrec.start();
-  if(!ok){const m=hiddenRec.querySelector('[data-a="msg"]').textContent;$("#ring").textContent=fmt(curDur);const p=document.createElement("p");p.className="small";p.textContent="Micro indisponible ici : le chrono tourne quand même. Tu peux t'enregistrer au Dictaphone et importer le fichier dans Analyse.";const old=$("#promptPanel").querySelector(".micnote");if(old)old.remove();p.classList.add("micnote");$("#promptPanel").appendChild(p)}
+    if(p<1)requestAnimationFrame(f);else{spinning=false;$("#spinBtn").disabled=false;setPrompt(CAT_NAMES[idx])}})(t0)};
+document.querySelectorAll("[data-dur]").forEach(b=>b.onclick=()=>{curDur=+b.dataset.dur;document.querySelectorAll("[data-dur]").forEach(x=>x.className="btn small"+(x===b?"":" ghost"));if(!talkTi)$("#ring").textContent=fmt(curDur)});
+const bars=list=>`<div class="bars">${list.map((x,i)=>`<div class="bar ${i===0?"top":""}"><span>${esc(x.v.name)}</span><span class="track"><span class="fill" style="width:${x.c.prox}%"></span></span><span class="num">${x.c.prox}%</span></div>`).join("")}</div>`;
+const srec=makeRecorder(document.createElement("div"),{},async(res,blob,msg)=>{const el=$("#resSpont");
+  if(!res.median){$("#talkMsg").textContent="Je n'ai pas entendu de voix.";return}
+  const t=targetVoice(),mine=statsOf(res),list=recorded().filter(v=>v.role!=="modele").map(v=>({v,c:compare(mine,v.stats)})).filter(x=>x.c.prox!=null).sort((a,b)=>b.c.prox-a.c.prox);
+  const extra=list.length?`<div class="stack"><span class="eyebrow">Tu ressemblais le plus à</span>${bars(list)}</div>`:"";
+  if(t){const tb=await getAudio(t.id);const c=resultBlock(el,res,blob,t.stats,t.name,tb?()=>playBlob(tb,...firstSeg(t)):null,extra);addHist({type:"spontane",target:t.name,prox:c.prox,nearest:list[0]?list[0].v.name:null})}
+  else{el.hidden=false;el.innerHTML=extra||"<p class='small'>Enregistre tes voix pour voir à laquelle tu ressembles.</p>"}});
+$("#talkBtn").onclick=async()=>{
+  if(talkTi){clearInterval(talkTi);talkTi=null;if(srec.recording())srec.stop();$("#talkBtn").textContent="Parler";$("#ring").textContent="Terminé";return}
+  const ok=await srec.start();$("#talkMsg").textContent=ok?"":srec.msg.textContent+" Le chrono tourne quand même.";
   let left=curDur;$("#talkBtn").textContent="Stop";$("#ring").textContent=fmt(left);
-  talkTi=setInterval(()=>{left--;$("#ring").textContent=fmt(left);if(left<=0){clearInterval(talkTi);talkTi=null;if(rrec.recording())rrec.stop();$("#talkBtn").textContent="Parler";$("#ring").textContent="Terminé";if(!ok)markStep("roulette")}},1000)});
+  talkTi=setInterval(()=>{left--;$("#ring").textContent=fmt(left);if(left<=0){clearInterval(talkTi);talkTi=null;if(srec.recording())srec.stop();$("#talkBtn").textContent="Parler";$("#ring").textContent="Terminé"}},1000)};
 
-/* thème : redessine quand il change */
-new MutationObserver(()=>{drawWheel(wheelAngle);redrawCharts()}).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
-try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{drawWheel(wheelAngle);redrawCharts()})}catch(e){}
+/* Ma voix du jour */
+makeRecorder($("#recJour"),{label:"Parler 30 s"},async(res,blob,msg)=>{
+  if(!res.median){msg.textContent="Je n'ai pas entendu de voix, recommence.";msg.className="err";return}
+  const mine=statsOf(res),vs=recorded().filter(v=>v.role!=="modele"),el=$("#resJour");el.hidden=false;
+  if(!vs.length){el.innerHTML=`<p class="small">Enregistre d'abord tes voix dans « Mes voix » : c'est à elles que je compare ta voix du jour.</p>`;return}
+  const list=vs.map(v=>({v,c:compare(mine,v.stats)})).filter(x=>x.c.prox!=null).sort((a,b)=>b.c.prox-a.c.prox),top=list[0];
+  let advice="";
+  if(top&&top.v.role==="apaiser"){const tg=vs.filter(v=>v.role==="cible").map(v=>({v,c:compare(mine,v.stats)})).sort((a,b)=>(b.c.prox||0)-(a.c.prox||0))[0];
+    if(!tg)advice="C'est une voix que tu veux apaiser. Choisis une voix cible dans « Mes voix » pour savoir vers quoi aller.";
+    else{const d=tg.c.diffs.slice().sort((a,b)=>Math.abs(b.d)-Math.abs(a.d))[0];advice=`Aujourd'hui, ta voix ${esc(top.v.name)} a pris le dessus. Pour revenir vers ta voix ${esc(tg.v.name)} : ${d?tipFor(d,tg.v.name):"respire et ralentis."}`}}
+  else if(top)advice=`Ta voix du jour est proche de ta voix ${esc(top.v.name)}, que tu as classée « ${ROLES[top.v.role]} ». Continue comme ça.`;
+  el.innerHTML=`<span class="eyebrow">Aujourd'hui, tu parlais avec ta voix</span><h2>${top?esc(top.v.name):"–"}</h2>
+  <div class="prio"><span class="eyebrow">Conseil</span><p>${advice}</p></div>
+  ${bars(list)}
+  <div class="mini"><div><small>Hauteur</small><b>${mine.median} Hz</b></div><div><small>Mélodie</small><b>${mine.spread??"–"} dt</b></div><div><small>Vraies pauses</small><b>${mine.rppm??"–"}/min</b></div><div><small>Fins qui descendent</small><b>${mine.fall??"–"} %</b></div></div>
+  ${inNotePct(res)!=null?`<p><b class="num">${inNotePct(res)} %</b> du temps dans ta note (${noteName(anchor())}), médiane ${(d=>(d>=0?"+":"−")+Math.abs(d).toFixed(1))(st(mine.median,hzOf(anchor())))} demi-tons par rapport à elle.</p>`:""}
+  <div class="row"><button class="btn ghost small" data-me>Réécouter</button></div>
+  <p class="small">Ta voix du jour apparaît aussi sur la carte, dans « Mes voix ».</p>`;
+  el.querySelector("[data-me]").onclick=()=>playBlob(blob);
+  mapExtra={name:"Aujourd'hui",x:mine.median,y:assurance(mine),today:true};
+  addHist({type:"jour",nearest:top?top.v.name:null,prox:top?top.c.prox:null})});
 
-renderSteps();renderHist();setGoal(goal());drawWheel(0);
+/* Échauffement */
+let breathOn=false,bT=null,bTick=null,cyc=0;const PH=[["Inspire",4,1],["Garde",2,1],["Expire « sss »",6,.6]];
+function bStep(i){if(!breathOn)return;const[p,s,sc]=PH[i];$("#orb").style.transitionDuration=s+"s";$("#orb").style.transform=`scale(${sc})`;$("#orbLabel").textContent=p;let left=s;$("#phase").textContent=p+" · "+left+" s";
+  clearInterval(bTick);bTick=setInterval(()=>{left--;if(left>0)$("#phase").textContent=p+" · "+left+" s"},1000);
+  bT=setTimeout(()=>{if(i===2){cyc++;$("#cycles").textContent=cyc+" cycle"+(cyc>1?"s":"")+" sur 6";if(cyc>=6){stopB(true);return}}bStep((i+1)%3)},s*1000)}
+function stopB(done){breathOn=false;clearTimeout(bT);clearInterval(bTick);$("#orb").style.transform="scale(.6)";$("#orbLabel").textContent=done?"Bravo":"Prête ?";$("#phase").textContent=done?"6 cycles faits":"4 s · 2 s · 6 s";$("#breathBtn").textContent="Respirer"}
+$("#breathBtn").onclick=()=>{if(breathOn){stopB(false);return}breathOn=true;cyc=0;$("#cycles").textContent="0 cycle sur 6";$("#breathBtn").textContent="Arrêter";bStep(0)};
+const EX=[
+ {t:"Humming « mmm »",s:45,p:"Lèvres fermées, dents desserrées. Fais un « mmm » sur une note confortable, plutôt dans le bas de ta voix. Cherche à faire vibrer ta poitrine."},
+ {t:"Sirènes douces",s:45,p:"Sur un « ng », glisse du grave vers l'aigu puis redescends, sans à-coups. Finis toujours par la descente."},
+ {t:"Phrases qui descendent",s:45,p:"« Je sais ce que je veux. » « C'est une bonne idée. » « On fait comme ça. » Laisse tomber le dernier mot, comme un objet qu'on pose."},
+ {tag:"Charme",t:"Attaque soufflée",s:45,p:"Dis « hhh-oui », « hhh-ah bon », « hhh-j'adore » en laissant sortir un filet d'air juste avant le son, sans coup de glotte."},
+ {tag:"Charme",t:"Voix de confidence",s:45,p:"Imagine quelqu'un à 50 cm. Parle à volume bas sans chuchoter : la voix reste timbrée, elle porte juste moins loin. Souris légèrement."},
+ {tag:"Charme",t:"Mots qui glissent",s:45,p:"Lie tous les mots d'une phrase comme une seule vague, en allongeant les voyelles. Aucun mot détaché, aucune accélération."}];
+EX.forEach(e=>{const c=document.createElement("div");c.className="ex";c.innerHTML=`${e.tag?`<span class="tagchip">${e.tag}</span>`:""}<h3>${e.t}</h3><p>${e.p}</p><div class="row" style="justify-content:space-between"><span class="num">${fmt(e.s)}</span><button class="btn ghost small">Lancer</button></div>`;
+  $("#exCards").appendChild(c);const b=c.querySelector("button"),tEl=c.querySelector(".num");let ti=null;
+  b.onclick=()=>{if(ti){clearInterval(ti);ti=null;tEl.textContent=fmt(e.s);b.textContent="Lancer";return}let left=e.s;b.textContent="Arrêter";ti=setInterval(()=>{left--;tEl.textContent=fmt(left);if(left<=0){clearInterval(ti);ti=null;b.textContent="Refaire";tEl.textContent="Fait"}},1000)}});
+
+/* Progrès */
+function renderProgress(){const h=hist(),days=store.get("days",{});let n=0;const d=new Date();if(!days[dayKey(d)])d.setDate(d.getDate()-1);while(days[dayKey(d)]){n++;d.setDate(d.getDate()-1)}
+  $("#streak").textContent=n+" j";$("#nbBasc").textContent=h.filter(x=>x.type==="bascule").length;$("#nbJour").textContent=h.filter(x=>x.type==="jour").length;
+  const TY={bascule:"Bascule",shadow:"Shadowing",spontane:"Spontané",jour:"Voix du jour",note:"Ma note"};
+  $("#hist").innerHTML=h.length?h.slice().reverse().slice(0,25).map(r=>`<tr><td class="num">${new Date(r.d).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}</td><td>${TY[r.type]||r.type}</td><td>${esc(r.target||"–")}</td><td class="num">${r.type==="jour"?esc(r.nearest||"–")+(r.prox!=null?" · "+r.prox+" %":""):(r.prox!=null?r.prox+" %":"–")}</td></tr>`).join(""):`<tr><td colspan="4" class="small">Tes séances apparaîtront ici.</td></tr>`;
+  if($("#progres").hidden)return;
+  const cv=$("#progChart"),pts=h.filter(x=>(x.type==="bascule"||x.type==="spontane")&&x.prox!=null).slice(-30);
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,H=150;cv.width=w*dpr;cv.height=H*dpr;const c=cv.getContext("2d");c.scale(dpr,dpr);c.clearRect(0,0,w,H);
+  const pl=34,pr=10,pt=8,pb=10,Y=v=>pt+(H-pt-pb)*(1-v/100),X=i=>pl+(w-pl-pr)*(pts.length>1?i/(pts.length-1):0.5);
+  c.font="11px "+css("--body");c.fillStyle=css("--muted");c.strokeStyle=css("--line");c.lineWidth=1;[0,50,100].forEach(v=>{c.beginPath();c.moveTo(pl,Y(v));c.lineTo(w-pr,Y(v));c.stroke();c.fillText(v+" %",0,Y(v)+4)});
+  if(!pts.length){$("#progNote").textContent="Fais une bascule dans l'onglet Entraînement pour voir ta courbe.";return}
+  c.strokeStyle=css("--accent");c.lineWidth=2;c.beginPath();pts.forEach((p,i)=>{i?c.lineTo(X(i),Y(p.prox)):c.moveTo(X(i),Y(p.prox))});c.stroke();
+  c.fillStyle=css("--accent");pts.forEach((p,i)=>{c.beginPath();c.arc(X(i),Y(p.prox),3,0,7);c.fill()});
+  const avg=x=>Math.round(x.reduce((s,p)=>s+p.prox,0)/x.length);
+  $("#progNote").textContent=pts.length>=6?`Moyenne de tes 3 premières séances : ${avg(pts.slice(0,3))} %. Des 3 dernières : ${avg(pts.slice(-3))} %.`:`${pts.length} séance${pts.length>1?"s":""} pour l'instant.`}
+
+/* Onglets */
+const tabs=[...document.querySelectorAll("nav button")];
+function show(id){tabs.forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===id?"true":"false"));
+  if(id!=="note"&&tun.on)tunerStop();
+  ["voix","note","train","jour","echauf","progres"].forEach(s=>{document.getElementById(s).hidden=s!==id});
+  if(id==="voix")drawMap();if(id==="note"){renderNotePick();renderNoteEx();drawTrace()}if(id==="train"){fillTargets();renderShadow();drawWheel(wheelAngle)}if(id==="progres")renderProgress();window.scrollTo({top:0})}
+tabs.forEach(b=>b.onclick=()=>show(b.dataset.tab));
+const redraw=()=>{if(!$("#voix").hidden)drawMap();if(!$("#train").hidden)drawWheel(wheelAngle);if(!$("#progres").hidden)renderProgress()};
+window.addEventListener("resize",redraw);
+new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",redraw)}catch(e){}
+
+refreshAll();drawWheel(0);
 })();
 </script>
 
