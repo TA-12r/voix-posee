@@ -135,6 +135,31 @@ canvas.trace{width:100%;height:170px;display:block}
 .tstats{display:flex;gap:14px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}
 .tstats b{color:var(--ink)}
 #notePick p{margin:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 .86rem var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tl{display:grid;grid-template-columns:62px minmax(0,1fr) 62px;gap:8px;align-items:center;font-size:.78rem;color:var(--muted)}
+.tl span:last-child{text-align:right}
+.tt{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,var(--accent-soft),var(--warm-soft))}
+.tt i{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);background:var(--accent);border:2px solid var(--surface)}
+.trows{display:flex;flex-direction:column;gap:10px}
+.trow{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:center;font-size:.88rem}
+.trow>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+canvas.compass{width:100%;height:320px;display:block}
+.prepbox{background:var(--accent-soft);border-radius:12px;padding:14px;min-height:96px}
+.prepstep{font-family:var(--display);font-size:1.15rem;line-height:1.4;margin:6px 0}
+.take{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.qchip{font:600 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.mark{display:inline-block;min-width:78px;text-align:center;font:600 .72rem var(--body);padding:2px 8px;border-radius:999px;margin-right:6px}
+.mark.ok{background:var(--good-soft);color:var(--good)}
+.mark.mid{background:var(--accent-soft);color:var(--accent)}
+.mark.bad{background:var(--warm-soft);color:var(--warm)}
+.opts{display:grid;gap:8px}
+.opts .btn{justify-content:flex-start;text-align:left}
+.opts .btn.correct{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.opts .btn.wrong{background:var(--warm-soft);border-color:var(--warm);color:var(--warm)}
+details.addicon summary{cursor:pointer}
 @media (prefers-reduced-motion:reduce){.orb{transition:none}.rec-dot{animation:none}}
 </style>
 
@@ -147,6 +172,7 @@ canvas.trace{width:100%;height:170px;display:block}
   <nav role="tablist" aria-label="Sections">
     <button role="tab" data-tab="voix" aria-selected="true">Mes voix</button>
     <button role="tab" data-tab="note" aria-selected="false">Ma note</button>
+    <button role="tab" data-tab="intent" aria-selected="false">Intention</button>
     <button role="tab" data-tab="train" aria-selected="false">Entraînement</button>
     <button role="tab" data-tab="jour" aria-selected="false">Ma voix du jour</button>
     <button role="tab" data-tab="echauf" aria-selected="false">Échauffement</button>
@@ -172,6 +198,7 @@ canvas.trace{width:100%;height:170px;display:block}
       <h3>Ce que disent tes voix</h3>
       <ul class="insights" id="insights"></ul>
     </div>
+    <div class="panel stack"><h3>Le timbre de tes voix</h3><div class="stack" id="timbreBox"></div></div>
     <div class="stack" id="voiceList"></div>
     <div class="panel stack">
       <h3>Ajouter une voix</h3>
@@ -190,6 +217,18 @@ canvas.trace{width:100%;height:170px;display:block}
       <p class="small">Bande verte : ta note, à deux demi-tons près. La ligne violette, c'est ta voix sur les 8 dernières secondes.</p>
       <div class="row" style="justify-content:space-between"><div class="tstats" id="tStats"></div><button class="btn ghost small" id="tReset">Remettre à zéro</button></div>
     </div>
+  </section>
+
+  <section id="intent" class="stack" hidden>
+    <div><h2>Intention</h2><p class="lead">La voix suit l'état intérieur. Choisis l'énergie que tu veux transmettre, mets-toi en état, puis parle sans penser à ta voix : pense à la personne et à ce que tu veux qu'elle ressente.</p></div>
+    <div class="panel stack"><h3>La boussole d'énergie</h3><canvas class="compass" id="compass" aria-label="Boussole d'énergie"></canvas><p class="small" id="compassNote"></p></div>
+    <div class="panel stack" id="prep"></div>
+    <div class="panel stack">
+      <h3>Exercices</h3>
+      <div class="chips" id="ixTabs" role="group" aria-label="Exercice"><button data-ix="trois">Trois intentions</button><button data-ix="sous">Sous-texte</button><button data-ix="curseur">Curseur d'énergie</button><button data-ix="vie">Ma vie</button><button data-ix="icones">Icônes</button></div>
+      <div class="stack" id="ixBox"></div>
+    </div>
+    <div class="panel stack" id="blind"></div>
   </section>
 
   <section id="train" class="stack" hidden>
@@ -260,7 +299,10 @@ canvas.trace{width:100%;height:170px;display:block}
       <div><span class="eyebrow">Série</span><b class="num" id="streak">0 j</b></div>
       <div><span class="eyebrow">Bascules</span><b class="num" id="nbBasc">0</b></div>
       <div><span class="eyebrow">Voix du jour</span><b class="num" id="nbJour">0</b></div>
+      <div><span class="eyebrow">Intentions</span><b class="num" id="nbInt">0</b></div>
+      <div><span class="eyebrow">Test à l'aveugle</span><b class="num" id="blindLast">–</b></div>
     </div>
+    <div class="panel stack"><h3>Énergie transmise</h3><p class="small" id="energyNote"></p></div>
     <div class="panel stack"><h3>Proximité avec la voix cible</h3><canvas class="pitch" id="progChart" aria-label="Courbe de progression"></canvas><p class="small" id="progNote"></p></div>
     <div class="panel stack"><h3>Historique</h3><div class="tablebox"><table><thead><tr><th>Date</th><th>Exercice</th><th>Cible</th><th>Résultat</th></tr></thead><tbody id="hist"></tbody></table></div></div>
   </section>
@@ -309,7 +351,7 @@ function analyze(buf){
   for(let f=0;f<frames;f++){if(rms[f]<=thr)continue;const o=f*hop;let best=0,bl=0;const r=[];
     for(let L=minL;L<=maxL&&L<N-8;L++){let c=0,e1=0,e2=0;for(let i=0;i<N-L;i++){const a=s[o+i],b=s[o+i+L];c+=a*b;e1+=a*a;e2+=b*b}const v=c/Math.sqrt(e1*e2+1e-12);r[L]=v;if(v>best){best=v;bl=L}}
     if(best>0.55){for(let L=minL+1;L<bl;L++){if(r[L]>=0.88*best&&r[L]>=r[L-1]&&r[L]>=(r[L+1]||0)){bl=L;break}}best=r[bl]}
-    if(best>0.5&&bl>minL&&bl<maxL){const a=r[bl-1]||best,b=r[bl+1]||best,d=(a-b)/(2*(a-2*best+b)||1);const hz=sr/(bl+(isFinite(d)?d:0));if(hz>70&&hz<420)pitch.push([f*0.02,hz])}}
+    if(best>0.5&&bl>minL&&bl<maxL){const a=r[bl-1]||best,b=r[bl+1]||best,d=(a-b)/(2*(a-2*best+b)||1);const hz=sr/(bl+(isFinite(d)?d:0));if(hz>70&&hz<420)pitch.push([f*0.02,hz,Math.min(0.995,Math.max(0.5,best)),f])}}
   if(pitch.length){const s0=pitch.map(p=>p[1]).sort((a,b)=>a-b),m0=s0[Math.floor((s0.length-1)/2)];pitch=pitch.filter(p=>p[1]>m0/1.7&&p[1]<m0*1.7)}
   let longest=0,pauseTime=0;const pauseList=[],segs=[];
   if(first>=0){let segStart=first;
@@ -324,12 +366,22 @@ function analyze(buf){
   segs.forEach(([a,b])=>{const pts=pitch.filter(p=>p[0]>=a&&p[0]<=b);let dir=null,med=null;
     if(b-a>=0.6&&pts.length>=10){const hs=pts.map(p=>p[1]).sort((x,y)=>x-y);med=hs[Math.floor(hs.length/2)];const tail=pts.slice(Math.floor(pts.length*0.7)).map(p=>p[1]).sort((x,y)=>x-y);const d=st(tail[Math.floor(tail.length/2)],med);nEnd++;if(d<-0.8){falls++;dir="down"}else if(d>0.8)dir="up";else dir="flat"}
     segInfo.push({s:a,e:b,med,dir})});
+  let bright=null,hnr=null,grain=null,vol=null,dyn=null;const med=a=>{if(!a.length)return null;const b=a.slice().sort((x,y)=>x-y);return b[Math.floor(b.length/2)]};
+  if(pitch.length>10){const W=512,win=new Float64Array(W),re=new Float64Array(W),im=new Float64Array(W),cents=[],hn=[],jit=[],maxBin=Math.min(W/2,Math.floor(5000/(sr/W)));
+    for(let i=0;i<W;i++)win[i]=0.5-0.5*Math.cos(2*Math.PI*i/(W-1));
+    pitch.forEach((p,i)=>{hn.push(10*Math.log10(p[2]/(1-p[2])));const o=p[3]*hop;
+      if(i%2===0&&o+W<=n){for(let j=0;j<W;j++){re[j]=s[o+j]*win[j];im[j]=0}fft(re,im);let num=0,den=0;for(let q=2;q<maxBin;q++){const m=Math.hypot(re[q],im[q]);num+=m*q;den+=m}if(den>0)cents.push(num/den*sr/W)}
+      if(i>0&&i<pitch.length-1&&pitch[i-1][3]===p[3]-1&&pitch[i+1][3]===p[3]+1)jit.push(Math.abs(1200*Math.log2(p[1]/Math.sqrt(pitch[i-1][1]*pitch[i+1][1]))))});
+    bright=med(cents);hnr=med(hn);grain=med(jit)}
+  {const dbs=[];for(let f=0;f<frames;f++)if(sp[f]&&rms[f]>0)dbs.push(20*Math.log10(rms[f]));if(dbs.length>10){dbs.sort((a,b)=>a-b);vol=dbs[Math.floor(dbs.length/2)];dyn=dbs[Math.floor(dbs.length*.9)]-dbs[Math.floor(dbs.length*.1)]}}
   const hz=pitch.map(p=>p[1]).sort((a,b)=>a-b),pq=p=>hz[Math.floor(p*(hz.length-1))];
   const real=pauseList.filter(d=>d>=0.8).length;
   return{duration:x.length/sr0,span,longest,pitch,segInfo,
     median:hz.length?pq(.5):null,spread:hz.length>10?12*Math.log2(pq(.9)/pq(.1)):null,
-    syl:talk>2?syl/talk:null,rppm:span>8?real/(span/60):null,fall:nEnd?falls/nEnd*100:null}}
-function statsOf(r){const f=(v,d)=>v==null?null:+v.toFixed(d);return{median:r.median?Math.round(r.median):null,spread:f(r.spread,1),syl:f(r.syl,1),rppm:f(r.rppm,1),longest:f(r.longest,1),fall:r.fall==null?null:Math.round(r.fall),dur:f(r.span,1)}}
+    syl:talk>2?syl/talk:null,rppm:span>8?real/(span/60):null,fall:nEnd?falls/nEnd*100:null,bright,hnr,grain,vol,dyn}}
+function fft(re,im){const n=re.length;for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b>>=1)j^=b;j^=b;if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]]}}
+  for(let len=2;len<=n;len<<=1){const a=-2*Math.PI/len,wr=Math.cos(a),wi=Math.sin(a);for(let i=0;i<n;i+=len){let cr=1,ci=0;for(let j=0;j<len/2;j++){const k=i+j,l=k+len/2,tr=re[l]*cr-im[l]*ci,ti=re[l]*ci+im[l]*cr;re[l]=re[k]-tr;im[l]=im[k]-ti;re[k]+=tr;im[k]+=ti;const nr=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=nr}}}}
+function statsOf(r){const f=(v,d)=>v==null?null:+v.toFixed(d);return{median:r.median?Math.round(r.median):null,spread:f(r.spread,1),syl:f(r.syl,1),rppm:f(r.rppm,1),longest:f(r.longest,1),fall:r.fall==null?null:Math.round(r.fall),dur:f(r.span,1),bright:r.bright==null?null:Math.round(r.bright),hnr:f(r.hnr,1),grain:f(r.grain,1),vol:f(r.vol,1),dyn:f(r.dyn,1)}}
 const NOTES=["do","do♯","ré","ré♯","mi","fa","fa♯","sol","sol♯","la","la♯","si"];
 const noteOf=f=>{const m=Math.round(69+12*Math.log2(f/440));return NOTES[(m%12+12)%12]+(Math.floor(m/12)-1)};
 
@@ -339,7 +391,10 @@ const FEATS=[
  {k:"spread",lbl:"Mélodie",unit:" dt",norm:(a,b)=>(a-b)/3},
  {k:"syl",lbl:"Rythme",unit:" syl/s",norm:(a,b)=>(a-b)/0.8},
  {k:"rppm",lbl:"Vraies pauses",unit:"/min",norm:(a,b)=>(a-b)/2},
- {k:"fall",lbl:"Fins qui descendent",unit:" %",norm:(a,b)=>(a-b)/30}];
+ {k:"fall",lbl:"Fins qui descendent",unit:" %",norm:(a,b)=>(a-b)/30},
+ {k:"bright",lbl:"Brillance",unit:" Hz",norm:(a,b)=>(a-b)/350},
+ {k:"hnr",lbl:"Netteté",unit:" dB",norm:(a,b)=>(a-b)/3},
+ {k:"grain",lbl:"Grain",unit:" ct",norm:(a,b)=>(a-b)/8}];
 function compare(a,b){const diffs=[];let sum=0,n=0;
   FEATS.forEach(F=>{if(a[F.k]==null||b[F.k]==null)return;const d=F.norm(a[F.k],b[F.k]);diffs.push({F,d});sum+=d*d;n++});
   if(!n)return{prox:null,diffs};const dist=Math.sqrt(sum*5/n);return{prox:Math.round(100*Math.exp(-dist*dist/8)),diffs}}
@@ -348,6 +403,9 @@ function tipFor(diff,name){const d=diff.d,k=diff.F.k,N=esc(name);
    spread:d>0?`Ta voix bouge plus que dans ta voix ${N}. Garde une ligne plus calme, une seule montée par phrase.`:`Ta voix ${N} est plus chantante. Mets plus de relief sur un ou deux mots.`,
    syl:d>0?`Tu parles plus vite que dans ta voix ${N}. Allonge les voyelles et laisse les mots respirer.`:`Tu es plus lente que dans ta voix ${N}. Laisse couler un peu plus.`,
    rppm:d<0?`Ta voix ${N} fait plus de silences. Ose t'arrêter une à deux secondes après une idée.`:`Tu t'arrêtes plus souvent que dans ta voix ${N}. Enchaîne un peu plus.`,
+   bright:d>0?`Ta voix est plus brillante que ta voix ${N}. Ouvre la gorge comme au début d'un bâillement et fais vibrer ta poitrine.`:`Ta voix est plus sombre que ta voix ${N}. Souris un peu en parlant pour l'éclaircir.`,
+   hnr:d>0?`Ta voix est plus nette que ta voix ${N}. Laisse passer un filet d'air au début des phrases.`:`Ta voix est plus soufflée que ta voix ${N}. Appuie un peu plus le son.`,
+   grain:d>0?`Ta voix a plus de grain que ta voix ${N}. Détends la gorge, ne pousse pas sur la fin des phrases.`:`Ta voix est plus lisse que ta voix ${N}.`,
    fall:d<0?`Tes fins de phrase montent plus que dans ta voix ${N}. Pose le dernier mot vers le bas, comme un objet sur une table.`:`Tes fins descendent plus que dans ta voix ${N}. C'est rarement un problème.`};
   return T[k]}
 function fmtVal(F,v){return v==null?"–":v+F.unit}
@@ -400,6 +458,9 @@ function insights(){const vs=recorded(),out=[];
       if(F.k==="spread")return d>0?"une mélodie qui part plus dans tous les sens":"une mélodie plus plate";
       if(F.k==="syl")return d>0?"un débit plus rapide":"un débit plus lent";
       if(F.k==="rppm")return d<0?"moins de vrais silences":"plus de coupures";
+      if(F.k==="bright")return d>0?"un son plus brillant":"un son plus sombre";
+      if(F.k==="hnr")return d>0?"un son plus net":"plus de souffle";
+      if(F.k==="grain")return d>0?"plus de grain":"un son plus lisse";
       return d<0?"des fins de phrase qui montent":"des fins qui descendent plus"});
     out.push(`Par rapport à ta voix ${esc(near.t.name)}, ta voix <b>${esc(a.name)}</b> a ${bits.join(" et ")}. C'est ça qu'il faut corriger quand tu la sens revenir.`)});
   const all=vs.filter(v=>v.role!=="modele").map(v=>v.stats.median);
@@ -416,7 +477,7 @@ function renderVoices(){const vs=voices(),list=$("#voiceList");list.innerHTML=""
       <p class="small">${esc(v.prompt||"Enregistre cette voix pendant 30 secondes.")}</p>
       ${v.read?`<p class="readtext">${READ}</p>`:""}
       ${s&&s.median?`<div class="mini"><div><small>Hauteur</small><b>${s.median} Hz</b><small>${noteOf(s.median)}</small></div><div><small>Mélodie</small><b>${s.spread??"–"} dt</b></div><div><small>Vraies pauses</small><b>${s.rppm??"–"}/min</b><small>max ${s.longest??"–"} s</small></div><div><small>Fins qui descendent</small><b>${s.fall??"–"} %</b></div></div>
-      <div class="row"><button class="btn ghost small" data-play>Réécouter</button></div>`:""}
+      ${timbreBlock(s)}<div class="row"><button class="btn ghost small" data-play>Réécouter</button></div>`:""}
       <div data-rec></div>
       <div class="row"><label class="small" for="role-${v.id}">Rôle</label><select id="role-${v.id}" data-role>${Object.keys(ROLES).map(r=>`<option value="${r}" ${r===v.role?"selected":""}>${ROLES[r]}</option>`).join("")}</select>${DEFAULT_VOICES.some(x=>x.id===v.id)?"":`<button class="btn ghost small" data-del>Supprimer</button>`}</div>
     </div>`;
@@ -428,7 +489,7 @@ function renderVoices(){const vs=voices(),list=$("#voiceList");list.innerHTML=""
       if(!res.median){msg.textContent="Je n'ai pas entendu de voix. Rapproche-toi du micro et recommence.";msg.className="err";return}
       const all=voices(),x=all.find(y=>y.id===v.id);x.stats=statsOf(res);x.segs=res.segInfo.filter(g=>g.e-g.s>=0.5).map(g=>({s:+g.s.toFixed(2),e:+g.e.toFixed(2),med:g.med?Math.round(g.med):null,dir:g.dir}));saveVoices(all);await putAudio(v.id,blob);refreshAll(v.id)})});
 }
-function refreshAll(openId){renderVoices();if(openId){const el=[...$("#voiceList").children].find(x=>x.dataset.id===openId);if(el)el.open=true}drawMap();insights();fillTargets();renderShadow();renderProgress()}
+function refreshAll(openId){renderVoices();renderTimbre();if(openId){const el=[...$("#voiceList").children].find(x=>x.dataset.id===openId);if(el)el.open=true}drawMap();insights();fillTargets();renderShadow();renderProgress()}
 $("#addVoice").onclick=()=>{const n=$("#newVoiceName").value.trim();if(!n)return;const all=voices();const id="v"+Date.now();all.push({id,name:n,role:"garder",prompt:"Enregistre cette voix pendant 30 secondes.",stats:null});saveVoices(all);$("#newVoiceName").value="";refreshAll(id)};
 
 /* Enregistreur */
@@ -623,6 +684,223 @@ function renderNoteEx(){const e=NOTE_EX[nxIdx],box=$("#noteEx");
   box.querySelector("[data-p]").onclick=()=>{nxIdx--;renderNoteEx()};box.querySelector("[data-n]").onclick=()=>{nxIdx++;renderNoteEx()};
   const nb=box.querySelector("[data-new]");if(nb)nb.onclick=()=>{box.querySelector("[data-ph]").textContent=pick(PHRASES)}}
 
+/* ---------- Timbre ---------- */
+const TIMBRE=[
+ {k:"bright",l:"Chaleur",r:"Brillance",al:"la plus chaude",ar:"la plus brillante",lo:700,hi:2200,u:" Hz",tab:"Chaleur / brillance"},
+ {k:"hnr",l:"Net",r:"Soufflé",al:"la plus nette",ar:"la plus soufflée",lo:4,hi:16,inv:true,u:" dB",tab:"Net / soufflé"},
+ {k:"grain",l:"Lisse",r:"Grain",al:"la plus lisse",ar:"celle qui a le plus de grain",lo:4,hi:25,u:" ct",tab:"Lisse / grain"},
+ {k:"vol",l:"Doux",r:"Fort",al:"la plus douce",ar:"la plus forte",lo:-42,hi:-14,u:" dB",tab:"Volume"}];
+const tpos=(T,v)=>{let p=(v-T.lo)/(T.hi-T.lo);if(T.inv)p=1-p;return Math.round(Math.max(0.03,Math.min(0.97,p))*100)};
+const sliderRow=(T,v)=>v==null?"":`<div class="tl"><span>${T.l}</span><span class="tt"><i style="left:${tpos(T,v)}%"></i></span><span>${T.r}</span></div>`;
+const timbreBlock=s=>s&&s.bright!=null?`<div class="stack" style="gap:8px"><span class="eyebrow">Timbre</span>${TIMBRE.map(T=>sliderRow(T,s[T.k])).join("")}</div>`:"";
+let tTab=0;
+function renderTimbre(){const box=$("#timbreBox");if(!box)return;const vs=recorded().filter(v=>v.stats.bright!=null);
+  if(!vs.length){box.innerHTML=`<p class="small">Le timbre de tes voix s'affichera ici. ${recorded().length?"Analyse en cours de tes enregistrements…":"Enregistre une première voix."}</p>`;return}
+  const T=TIMBRE[tTab];
+  box.innerHTML=`<div class="chips" role="group" aria-label="Mesure">${TIMBRE.map((x,i)=>`<button data-t="${i}" aria-pressed="${i===tTab}">${x.tab}</button>`).join("")}</div>
+  <div class="trows">${vs.map(v=>`<div class="trow"><span>${esc(v.name)}</span><div class="tl"><span>${T.l}</span><span class="tt"><i style="left:${tpos(T,v.stats[T.k])}%;background:${roleColor(v.role)}"></i></span><span>${T.r}</span></div></div>`).join("")}</div>
+  <p class="small">${timbreComment(vs,T)}</p>`;
+  box.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{tTab=+b.dataset.t;renderTimbre()})}
+function timbreComment(vs,T){if(vs.length<2)return "Mesures approximatives : enregistre-toi toujours au même endroit et à la même distance du téléphone.";
+  const sorted=vs.slice().sort((a,b)=>tpos(T,a.stats[T.k])-tpos(T,b.stats[T.k]));const lo=sorted[0],hi=sorted[sorted.length-1];
+  return `« ${esc(lo.name)} » est ${T.al}, « ${esc(hi.name)} » ${T.ar}. Mesures approximatives : enregistre-toi toujours au même endroit et à la même distance du téléphone.`}
+async function decodeBlob(blob){const ab=await blob.arrayBuffer();const AC=window.AudioContext||window.webkitAudioContext;const c=new AC();
+  const buf=await new Promise((ok,ko)=>{const p=c.decodeAudioData(ab,ok,ko);if(p&&p.then)p.then(ok,ko)});if(c.close)c.close();return buf}
+async function reanalyzeTimbre(){let changed=false;
+  for(const v of voices()){if(!(v.stats&&v.stats.median)||v.stats.bright!==undefined)continue;const b=await getAudio(v.id);if(!b)continue;
+    try{const buf=await decodeBlob(b);await new Promise(r=>setTimeout(r,10));const res=analyze(buf);const all=voices(),x=all.find(y=>y.id===v.id);if(x){x.stats=statsOf(res);saveVoices(all);changed=true}}catch(e){}}
+  if(changed)refreshAll();else renderTimbre()}
+
+/* ---------- Énergie : boussole ---------- */
+const QUAD={
+ magnetique:{n:"Magnétique",x:.6,y:-.55,desc:"calme et chaleureuse",col:"--warm"},
+ rayonnante:{n:"Rayonnante",x:.6,y:.55,desc:"vive et chaleureuse",col:"--good"},
+ affirmee:{n:"Affirmée",x:-.6,y:.55,desc:"vive et retenue",col:"--accent"},
+ sereine:{n:"Sereine",x:-.6,y:-.55,desc:"calme et retenue",col:"--muted"}};
+const quadOf=p=>p.y>=0?(p.x>=0?"rayonnante":"affirmee"):(p.x>=0?"magnetique":"sereine");
+function baseline(){const vs=recorded().filter(v=>v.role!=="modele");return vs.find(v=>v.id==="mavoix")||vs.find(v=>v.id==="quotidienne")||vs.find(v=>v.id==="pro")||vs[0]||null}
+function energyPos(s,b){const cl=(v,d)=>Math.max(-1,Math.min(1,v/d)),E=[],W=[],ok=k=>s[k]!=null&&b[k]!=null;
+  if(ok("vol"))E.push(cl(s.vol-b.vol,6));
+  if(ok("syl"))E.push(cl(s.syl-b.syl,0.8));
+  if(ok("median"))E.push(cl(st(s.median,b.median),3));
+  if(ok("dyn"))E.push(cl(s.dyn-b.dyn,6));
+  if(ok("spread")){E.push(cl(s.spread-b.spread,6));W.push(cl(s.spread-b.spread,4))}
+  if(ok("bright"))W.push(cl(-(s.bright-b.bright),400));
+  if(ok("hnr"))W.push(cl(-(s.hnr-b.hnr),4));
+  if(ok("fall"))W.push(cl(-(s.fall-b.fall),50));
+  const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0,c1=v=>Math.max(-1,Math.min(1,v));
+  return{x:c1(avg(W)*1.7),y:c1(avg(E)*1.7)}}
+let compassPts=[],compassTarget=null;
+function drawCompass(){const cv=$("#compass");if(!cv||$("#intent").hidden)return;const dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,h=320;cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");c.scale(dpr,dpr);c.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,rx=w/2-16,ry=h/2-24,X=x=>cx+x*rx,Y=y=>cy-y*ry;
+  Object.values(QUAD).forEach(q=>{c.fillStyle=css(q.col);c.globalAlpha=.08;c.fillRect(q.x>0?cx:16,q.y>0?24:cy,rx,ry);c.globalAlpha=1});
+  c.strokeStyle=css("--line");c.lineWidth=1;c.beginPath();c.moveTo(16,cy);c.lineTo(w-16,cy);c.moveTo(cx,24);c.lineTo(cx,h-24);c.stroke();
+  c.font="11px "+css("--body");c.fillStyle=css("--muted");c.textAlign="center";c.fillText("vive",cx,14);c.fillText("calme",cx,h-8);
+  c.textAlign="left";c.fillText("retenue",18,cy-6);c.textAlign="right";c.fillText("chaleureuse",w-18,cy-6);
+  c.font="600 13px "+css("--body");Object.values(QUAD).forEach(q=>{c.fillStyle=css(q.col);c.textAlign=q.x>0?"right":"left";c.fillText(q.n,q.x>0?w-22:22,q.y>0?42:h-32)});
+  const b=baseline();
+  if(b){recorded().filter(v=>v.id!==b.id).forEach(v=>{const p=energyPos(v.stats,b.stats);c.fillStyle=css("--muted");c.globalAlpha=.55;c.beginPath();c.arc(X(p.x),Y(p.y),4,0,7);c.fill();c.globalAlpha=1;c.font="11px "+css("--body");c.textAlign="center";c.fillText(v.name,X(p.x),Y(p.y)-8)})}
+  c.fillStyle=css("--ink");c.beginPath();c.arc(cx,cy,5,0,7);c.fill();c.font="600 11px "+css("--body");c.textAlign="left";c.fillText(b?b.name:"ta voix",cx+8,cy+14);
+  if(compassTarget){const tx=X(compassTarget.x),ty=Y(compassTarget.y);c.strokeStyle=css("--ink");c.lineWidth=2;c.setLineDash([4,3]);c.beginPath();c.arc(tx,ty,14,0,7);c.stroke();c.setLineDash([]);c.fillStyle=css("--ink");c.textAlign="center";c.fillText("visé",tx,ty+28)}
+  compassPts.forEach((p,i)=>{const x=X(p.x),y=Y(p.y),last=i===compassPts.length-1;c.strokeStyle=css("--accent");c.lineWidth=last?2:1;c.globalAlpha=last?1:.5;c.beginPath();c.moveTo(cx,cy);c.lineTo(x,y);c.stroke();
+    c.fillStyle=css("--accent");c.beginPath();c.arc(x,y,last?7:5,0,7);c.fill();c.globalAlpha=1;c.fillStyle=css("--ink");c.font=(last?"600 ":"")+"12px "+css("--body");c.textAlign="center";c.fillText(p.label,x,y-12)});
+  $("#compassNote").textContent=b?`Le centre, c'est ta voix ${b.name}. Chaque prise est placée par rapport à elle. Les points gris sont tes autres voix.`:"Enregistre « Ma voix » (ou ta voix quotidienne) dans « Mes voix » : c'est le centre de la boussole."}
+
+/* ---------- Intentions ---------- */
+const DIR={vol:{n:3,l:["plus forte","plus douce"]},syl:{n:.4,l:["plus rapide","plus lente"]},median:{n:1,l:["plus aiguë","plus grave"],st:true},spread:{n:1.5,l:["plus mélodieuse","plus contenue"]},hnr:{n:1.5,l:["plus nette","plus soufflée"]},bright:{n:150,l:["plus brillante","plus chaude"]},fall:{n:20,l:["des fins plus posées","des fins plus ouvertes"]}};
+const INTENTS=[
+ {id:"secret",n:"Je confie un secret",q:"magnetique",exp:{vol:-1,syl:-1,hnr:-1,median:-1},prep:"La personne est tout près de toi, à 30 cm. Personne d'autre ne doit entendre."},
+ {id:"rassure",n:"Je rassure",q:"magnetique",exp:{syl:-1,vol:-1,fall:1,spread:-1},prep:"Quelqu'un que tu aimes est inquiet. Tu as la solution, rien ne presse."},
+ {id:"charme",n:"Je charme",q:"magnetique",exp:{syl:-1,hnr:-1,bright:-1,median:-1},prep:"Tu sais que tu plais. Tu n'as rien à prouver, tu prends ton temps."},
+ {id:"console",n:"Je console",q:"magnetique",exp:{vol:-1,syl:-1,bright:-1},prep:"Une amie pleure. Ta voix est une couverture."},
+ {id:"heureuse",n:"Je suis heureuse de te voir",q:"rayonnante",exp:{median:1,spread:1,vol:1},prep:"Quelqu'un que tu n'as pas vu depuis longtemps vient d'entrer."},
+ {id:"nouvelle",n:"Je partage une bonne nouvelle",q:"rayonnante",exp:{spread:1,syl:1,vol:1},prep:"Tu viens d'apprendre une excellente nouvelle et tu meurs d'envie de la dire."},
+ {id:"invite",n:"J'invite",q:"rayonnante",exp:{spread:1,vol:1,bright:-1},prep:"Tu donnes envie de venir. Tu souris en parlant."},
+ {id:"sure",n:"Je suis sûre de moi",q:"affirmee",exp:{fall:1,vol:1,spread:-1},prep:"Tu connais ton sujet mieux que personne. Pieds ancrés, menton droit."},
+ {id:"limite",n:"Je pose une limite",q:"affirmee",exp:{fall:1,median:-1,syl:-1,spread:-1},prep:"C'est non, calmement, et ce n'est pas négociable."},
+ {id:"presente",n:"Je présente mon travail",q:"affirmee",exp:{vol:1,fall:1},prep:"Une salle de congrès. Ta voix porte jusqu'au dernier rang."},
+ {id:"temps",n:"J'ai tout mon temps",q:"sereine",exp:{syl:-1,spread:-1,vol:-1},prep:"Rien ne presse. Le monde peut attendre."},
+ {id:"reflechis",n:"Je réfléchis à voix haute",q:"sereine",exp:{syl:-1,spread:-1},prep:"Tu penses en parlant, sans chercher à convaincre."}];
+const intentById=id=>INTENTS.find(i=>i.id===id);
+const PREP={
+ magnetique:[["Corps","Épaules basses, mâchoire relâchée, léger sourire. Ton poids repose dans le bassin."],["Souffle","Inspire 4 s par le nez, expire 8 s sur un « mmm » à peine audible."],["Image","Une personne précise, tout près de toi. Tu veux qu'elle ressente de la chaleur."]],
+ rayonnante:[["Corps","Debout, poitrine ouverte, vrai sourire jusqu'aux yeux. Bouge un peu les épaules."],["Souffle","Trois inspirations rapides par le nez, puis un long « haaa » joyeux."],["Image","Quelqu'un que tu adores arrive. Tu veux qu'il ressente ta joie de le voir."]],
+ affirmee:[["Corps","Pieds ancrés à la largeur du bassin, menton parallèle au sol, regard droit."],["Souffle","Inspire bas dans le ventre, expire sur un « sss » long et régulier. Ton centre est solide."],["Image","Une salle qui t'écoute. Tu veux qu'elle ressente que tu sais où tu vas."]],
+ sereine:[["Corps","Assise, dos long, mains posées. Laisse tomber les épaules à chaque expiration."],["Souffle","Inspire 4 s, garde 2 s, expire 6 s. Trois fois."],["Image","Un matin calme, une mer plate. Tu veux transmettre de la paix."]]};
+
+function checkExp(s,b,exp){const out=[];if(!exp)return out;
+  Object.entries(exp).forEach(([k,sign])=>{if(s[k]==null||b[k]==null)return;const D=DIR[k],raw=D.st?st(s[k],b[k]):s[k]-b[k],z=raw/D.n*sign;
+    out.push({k,ok:z>=1?2:z>=0.35?1:z<=-0.35?-1:0,want:D.l[sign>0?0:1],wrong:D.l[sign>0?1:0]})});return out}
+function scoreOf(checks,pos,target){const e=checks.length?checks.reduce((a,c)=>a+(c.ok===2?1:c.ok===1?0.6:0),0)/checks.length:null;
+  const q=target?Math.max(0,1-Math.hypot(pos.x-target.x,pos.y-target.y)/1.6):null;
+  if(e==null&&q==null)return null;if(e==null)return Math.round(q*100);if(q==null)return Math.round(e*100);return Math.round((0.6*e+0.4*q)*100)}
+function checksHtml(ch){if(!ch.length)return "";return `<ul class="checks">${ch.map(c=>`<li><span class="mark ${c.ok>=1?"ok":c.ok<0?"bad":"mid"}">${c.ok===2?"oui":c.ok===1?"un peu":c.ok<0?"à l'inverse":"pas assez"}</span> ${c.ok<0?`ta voix est devenue ${c.wrong}, il la fallait ${c.want}`:`voix ${c.want}`}</li>`).join("")}</ul>`}
+function takes(){return store.get("takes",[])}
+async function delAudio(id){memAudio.delete(id);const d=await db();if(!d)return;try{d.transaction("audio","readwrite").objectStore("audio").delete(id)}catch(e){}}
+async function saveTake(t,blob){const id="take-"+Date.now()+"-"+rnd(1000);t.id=id;t.d=new Date().toISOString();await putAudio(id,blob);let all=takes();all.push(t);if(all.length>80){all.slice(0,all.length-80).forEach(x=>delAudio(x.id));all=all.slice(-80)}store.set("takes",all);renderBlindIntro()}
+
+/* Analyse d'une prise : place sur la boussole, vérifie la direction, enregistre */
+async function takeResult(el,res,blob,o){const b=baseline(),s=statsOf(res);el.hidden=false;
+  if(!res.median){el.innerHTML=`<p class="err">Je n'ai pas entendu de voix, recommence plus près du micro.</p>`;return null}
+  if(!b){el.innerHTML=`<p class="small">Enregistre d'abord « Ma voix » ou ta voix quotidienne dans « Mes voix » : c'est ta référence pour mesurer l'énergie.</p>`;return null}
+  const pos=energyPos(s,b.stats),it=o.intent?intentById(o.intent):null,target=o.target||(it?QUAD[it.q]:null);
+  const ch=checkExp(s,b.stats,o.exp||(it&&it.exp)),score=scoreOf(ch,pos,target),reached=quadOf(pos);
+  compassPts.push({x:pos.x,y:pos.y,label:o.short||o.label});if(compassPts.length>6)compassPts.shift();compassTarget=target?{x:target.x,y:target.y}:null;drawCompass();
+  const tq=target?(target.q||(it&&it.q)||quadOf(target)):null;
+  el.innerHTML=`<div class="prox"><b>${score??"–"}<small style="font-size:1rem"> %</small></b><span class="small">d'énergie transmise</span></div>
+   <p class="small">Ta voix est arrivée en zone <b style="color:var(${QUAD[reached].col})">${QUAD[reached].n}</b>${tq?(tq===reached?", c'est bien la zone visée.":`, alors que tu visais <b>${QUAD[tq].n}</b>.`):"."}</p>
+   ${checksHtml(ch)}
+   <div class="row"><button class="btn ghost small" data-me>Réécouter</button></div>`;
+  el.querySelector("[data-me]").onclick=()=>playBlob(blob);
+  if(o.save!==false)await saveTake({label:o.label,q:tq||reached,x:pos.x,y:pos.y,score,kind:o.kind},blob);
+  addHist({type:"intention",target:o.label,prox:score});
+  return{pos,score,s}}
+
+/* Mise en état */
+let prepQ="magnetique",prepT=null;
+function renderPrep(){const box=$("#prep");const steps=PREP[prepQ];
+  box.innerHTML=`<div class="row" style="justify-content:space-between"><h3>Me mettre en état</h3><span class="small">60 secondes</span></div>
+   <div class="chips" role="group" aria-label="Énergie">${Object.entries(QUAD).map(([k,q])=>`<button data-q="${k}" aria-pressed="${k===prepQ}">${q.n}</button>`).join("")}</div>
+   <p class="small">Énergie ${QUAD[prepQ].n.toLowerCase()} : ${QUAD[prepQ].desc}.</p>
+   <div class="prepbox" id="prepBox"><span class="eyebrow">${steps.map(s=>s[0]).join(" · ")}</span><p class="small" style="margin-top:6px">Trois étapes de 20 secondes : le corps, le souffle, puis l'image.</p></div>
+   <div class="row"><button class="btn small" id="prepGo">${prepT?"Arrêter":"Commencer"}</button></div>`;
+  box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{prepQ=b.dataset.q;stopPrep();renderPrep()});
+  $("#prepGo").onclick=()=>{if(prepT){stopPrep();renderPrep();return}let i=0,left=20;const tick=()=>{const st0=steps[i];$("#prepBox").innerHTML=`<span class="eyebrow">${i+1} / 3 · ${st0[0]}</span><p class="prepstep">${st0[1]}</p><span class="num small">${left} s</span>`};
+    tick();$("#prepGo").textContent="Arrêter";prepT=setInterval(()=>{left--;if(left<=0){i++;left=20;if(i>=3){stopPrep();$("#prepBox").innerHTML=`<p class="prepstep">Tu es prête. Parle maintenant, sans réfléchir à ta voix : pense à la personne et à ce que tu veux qu'elle ressente.</p>`;$("#prepGo").textContent="Recommencer";return}}tick()},1000)}}
+function stopPrep(){clearInterval(prepT);prepT=null}
+function setPrepQ(q){if(q&&QUAD[q]&&q!==prepQ&&!prepT){prepQ=q;renderPrep()}}
+
+/* Exercices */
+const BANALES=["Tu veux un café ?","On se voit demain.","Il fait beau aujourd'hui.","J'ai fini mon travail.","Tu as bien dormi ?","Je rentre vers vingt heures.","Tu as vu l'heure ?","Je vais faire quelques courses."];
+const SOUS=[{t:"J'ai tout mon temps.",i:"temps"},{t:"Je sais quelque chose que tu ne sais pas.",i:"charme"},{t:"Tu me plais.",i:"charme"},{t:"Je suis tellement contente que tu sois là.",i:"heureuse"},{t:"Ne t'inquiète pas, je m'occupe de tout.",i:"rassure"},{t:"Je ne changerai pas d'avis.",i:"limite"},{t:"Approche.",i:"secret"},{t:"J'ai une surprise pour toi.",i:"nouvelle"},{t:"Je sais exactement ce que je fais.",i:"sure"}];
+const SITUATIONS=[
+ {n:"Mon chéri, le soir",i:"charme",p:"Raconte-lui ta journée, tous les deux sur le canapé. 20 secondes."},
+ {n:"Faire cours",i:"presente",p:"Présente à tes étudiants le thème du cours d'aujourd'hui. 20 secondes."},
+ {n:"Congrès de thèse",i:"sure",p:"Présente ton sujet de thèse en une phrase, puis ton résultat principal."},
+ {n:"Rassurer ma famille",i:"rassure",p:"Quelqu'un de ta famille s'inquiète pour toi. Rassure-le."},
+ {n:"Dire non",i:"limite",p:"On te demande un service que tu ne veux pas rendre. Refuse gentiment, mais fermement."},
+ {n:"Retrouver une amie",i:"heureuse",p:"Ta meilleure amie arrive à l'aéroport. Accueille-la."},
+ {n:"Message vocal pro",i:"temps",p:"Laisse un message vocal professionnel, posé et clair, à quelqu'un que tu ne connais pas."}];
+const ICONS_BASE=[
+ {id:"meg",n:"Meg",src:"Hercule",x:.15,y:-.45,exp:{syl:-1,fall:1,median:-1,spread:-1},d:"Nonchalante et ironique. Elle ne court après personne : voix basse, un peu traînante, fins de phrase qui tombent avec un sourire en coin.",ph:"Toi, tu as l'air de quelqu'un qui a besoin d'aide. Moi, pas du tout."},
+ {id:"chel",n:"Chel",src:"La Route d'Eldorado",x:.55,y:.35,exp:{spread:1,hnr:-1,bright:-1},d:"Espiègle et charmeuse, toujours un coup d'avance. Elle joue avec les mots, sa voix glisse et sourit.",ph:"Fais-moi confiance… enfin, juste un peu."},
+ {id:"gabrielle",n:"Gabrielle Solis",src:"Desperate Housewives",x:.3,y:.6,exp:{fall:1,spread:1,vol:1},d:"Piquante, glamour et sûre d'elle. Elle dramatise avec humour et finit ses phrases avec aplomb.",ph:"Chéri, je ne me fâche pas. Je constate."},
+ {id:"samantha",n:"Samantha Jones",src:"Sex and the City",x:.2,y:.35,exp:{fall:1,median:-1,hnr:-1},d:"Audacieuse et sensuelle, elle dit ce qu'elle pense sans jamais s'excuser. Voix assurée, chaude, fins de phrase posées.",ph:"Je sais exactement ce que je veux, et je ne m'en excuse pas."}];
+const icons=()=>ICONS_BASE.concat(store.get("icons",[]));
+let ixMode="trois",trois=null,sous=null,curseur=null,sitIdx=0,iconIdx=0;
+const qchip=q=>`<span class="qchip" style="color:var(${QUAD[q].col})">${QUAD[q].n}</span>`;
+function newTrois(){const qs=Object.keys(QUAD).sort(()=>rnd(3)-1).slice(0,3);trois={ph:pick(PHRASES),its:qs.map(q=>pick(INTENTS.filter(i=>i.q===q)).id),res:[]}}
+function renderIx(){document.querySelectorAll("#ixTabs [data-ix]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.ix===ixMode?"true":"false"));const box=$("#ixBox");
+  if(ixMode==="trois"){if(!trois)newTrois();
+    box.innerHTML=`<p class="small">La même phrase, dite trois fois avec trois intentions différentes. Si l'énergie passe, ta voix doit changer à chaque fois.</p><p class="phrase">${esc(trois.ph)}</p><div class="row"><button class="btn ghost small" id="reTrois">Autre tirage</button></div>
+     ${trois.its.map((id,k)=>{const it=intentById(id);return `<div class="take"><div class="row" style="justify-content:space-between"><h3>${k+1}. ${it.n}</h3>${qchip(it.q)}</div><p class="small">${it.prep}</p><div data-rec="${k}"></div><div class="stack" data-res="${k}" hidden></div></div>`}).join("")}
+     <div class="prio" id="troisSum" hidden></div>`;
+    $("#reTrois").onclick=()=>{newTrois();renderIx()};
+    trois.its.forEach((id,k)=>{const it=intentById(id);makeRecorder(box.querySelector(`[data-rec="${k}"]`),{label:"Dire la phrase"},async(res,blob)=>{setPrepQ(it.q);const r=await takeResult(box.querySelector(`[data-res="${k}"]`),res,blob,{intent:id,label:it.n,short:it.n.replace(/^Je |^J'/,""),kind:"trois"});if(r){trois.res[k]=r.pos;troisSummary()}})});
+    setPrepQ(intentById(trois.its[0]).q)}
+  else if(ixMode==="sous"){if(!sous)sous={ph:pick(BANALES),s:pick(SOUS)};const it=intentById(sous.s.i);
+    box.innerHTML=`<p class="small">Une technique d'acteur : tu dis une phrase banale, mais tu penses très fort une phrase secrète. Ne change pas ta voix exprès, pense seulement au sous-texte.</p>
+     <span class="eyebrow">Tu dis</span><p class="phrase">${esc(sous.ph)}</p><span class="eyebrow">Tu penses</span><p class="phrase" style="color:var(--accent)">« ${esc(sous.s.t)} »</p>
+     <div class="row"><button class="btn ghost small" id="reSous">Autre tirage</button>${qchip(it.q)}</div><div id="recSous"></div><div class="stack" id="resSous" hidden></div>`;
+    $("#reSous").onclick=()=>{sous=null;renderIx()};setPrepQ(it.q);
+    makeRecorder($("#recSous"),{label:"Dire la phrase"},(res,blob)=>takeResult($("#resSous"),res,blob,{intent:it.id,label:"Sous-texte : "+sous.s.t,short:"sous-texte",kind:"sous"}))}
+  else if(ixMode==="curseur"){if(!curseur)curseur={ph:pick(PHRASES),y:[]};const LV=[[2,"Presque rien : énergie au repos, comme un murmure intérieur."],[5,"Ton énergie normale, présente mais tranquille."],[8,"Beaucoup d'énergie : tu veux vraiment que ça arrive jusqu'à l'autre."]];
+    box.innerHTML=`<p class="small">La même phrase à trois niveaux d'énergie. Trop peu, c'est terne ; trop, c'est agité ou enfantin. Le but : sentir le bon dosage.</p><p class="phrase">${esc(curseur.ph)}</p><div class="row"><button class="btn ghost small" id="reCur">Autre phrase</button></div>
+     ${LV.map(([n,t],k)=>`<div class="take"><h3>Énergie ${n} / 10</h3><p class="small">${t}</p><div data-rec="${k}"></div><div class="stack" data-res="${k}" hidden></div></div>`).join("")}<div class="prio" id="curSum" hidden></div>`;
+    $("#reCur").onclick=()=>{curseur=null;renderIx()};
+    LV.forEach(([n],k)=>makeRecorder(box.querySelector(`[data-rec="${k}"]`),{label:"Dire la phrase"},async(res,blob)=>{const b=baseline(),el=box.querySelector(`[data-res="${k}"]`);el.hidden=false;
+      if(!res.median){el.innerHTML=`<p class="err">Je n'ai pas entendu de voix.</p>`;return}if(!b){el.innerHTML=`<p class="small">Enregistre d'abord « Ma voix » dans « Mes voix ».</p>`;return}
+      const p=energyPos(statsOf(res),b.stats);curseur.y[k]=p.y;curseur.blob=curseur.blob||[];curseur.blob[k]=blob;compassPts.push({x:p.x,y:p.y,label:n+"/10"});if(compassPts.length>6)compassPts.shift();compassTarget=null;drawCompass();
+      el.innerHTML=`<p class="small">Énergie mesurée : <b class="num">${Math.round((p.y+1)*5)}/10</b> environ.</p><div class="row"><button class="btn ghost small" data-me>Réécouter</button></div>`;el.querySelector("[data-me]").onclick=()=>playBlob(blob);curSummary()}))}
+  else if(ixMode==="vie"){const S=SITUATIONS[sitIdx],it=intentById(S.i);
+    box.innerHTML=`<div class="chips" role="group" aria-label="Situation">${SITUATIONS.map((x,k)=>`<button data-s="${k}" aria-pressed="${k===sitIdx}">${x.n}</button>`).join("")}</div>
+     <div class="row" style="justify-content:space-between"><h3>${S.n}</h3>${qchip(it.q)}</div><p class="phrase" style="font-size:1.1rem">${S.p}</p><p class="small">${it.prep}</p><div id="recSit"></div><div class="stack" id="resSit" hidden></div>`;
+    box.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{sitIdx=+b.dataset.s;renderIx()});setPrepQ(it.q);
+    makeRecorder($("#recSit"),{label:"Parler"},(res,blob)=>takeResult($("#resSit"),res,blob,{intent:it.id,label:S.n,short:S.n,kind:"vie"}))}
+  else if(ixMode==="icones"){const L=icons();iconIdx=Math.min(iconIdx,L.length-1);const I=L[iconIdx],tq=quadOf(I);
+    box.innerHTML=`<div class="chips" role="group" aria-label="Icône">${L.map((x,k)=>`<button data-c="${k}" aria-pressed="${k===iconIdx}">${esc(x.n)}</button>`).join("")}</div>
+     <div class="row" style="justify-content:space-between"><h3>L'énergie de ${esc(I.n)}</h3>${qchip(tq)}</div>${I.src?`<span class="small">${esc(I.src)}</span>`:""}
+     <p class="small">${esc(I.d)}</p><span class="eyebrow">Dis, avec son énergie</span><p class="phrase">${esc(I.ph||pick(PHRASES))}</p>
+     <p class="small">Ne l'imite pas : emprunte son attitude. Comment elle se tient, ce qu'elle pense de la personne en face, le temps qu'elle prend.</p>
+     <div id="recIco"></div><div class="stack" id="resIco" hidden></div>
+     <details class="addicon"><summary class="small">Ajouter une icône</summary><div class="stack" style="margin-top:10px"><input type="text" id="icoName" placeholder="Nom" aria-label="Nom de l'icône"><input type="text" id="icoDesc" placeholder="Son énergie en une phrase" aria-label="Description"><input type="text" id="icoPh" placeholder="Une phrase à dire dans son style" aria-label="Phrase"><select id="icoQ" aria-label="Zone d'énergie">${Object.entries(QUAD).map(([k,q])=>`<option value="${k}">${q.n} (${q.desc})</option>`).join("")}</select><button class="btn small" id="icoAdd">Ajouter</button></div></details>`;
+    box.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{iconIdx=+b.dataset.c;renderIx()});setPrepQ(tq);
+    $("#icoAdd").onclick=()=>{const n=$("#icoName").value.trim();if(!n)return;const q=QUAD[$("#icoQ").value];const all=store.get("icons",[]);all.push({id:"i"+Date.now(),n,d:$("#icoDesc").value.trim()||"Ton icône.",ph:$("#icoPh").value.trim(),x:q.x*.8,y:q.y*.8});store.set("icons",all);iconIdx=icons().length-1;renderIx()};
+    makeRecorder($("#recIco"),{label:"Dire la phrase"},(res,blob)=>takeResult($("#resIco"),res,blob,{target:{x:I.x,y:I.y,q:tq},exp:I.exp,label:"Comme "+I.n,short:I.n,kind:"icone"}))}}
+function troisSummary(){const P=trois.res.filter(Boolean);if(P.length<3)return;let m=9;for(let i=0;i<3;i++)for(let j=i+1;j<3;j++)m=Math.min(m,Math.hypot(P[i].x-P[j].x,P[i].y-P[j].y));
+  const el=$("#troisSum");el.hidden=false;el.innerHTML=`<span class="eyebrow">Bilan des trois prises</span><p>${m<0.3?"Tes trois prises se ressemblent beaucoup : l'intention ne passe pas encore dans la voix. Refais-les en exagérant, comme au théâtre. Tu doseras ensuite.":m<0.6?"Tes prises sont différentes, mais deux d'entre elles restent proches. Pousse un peu plus l'intention la moins marquée.":"Tes trois prises sont bien distinctes : ta voix change vraiment avec l'intention. C'est exactement ça, l'énergie transmise."}</p>`}
+function curSummary(){const y=curseur.y;if(y.filter(v=>v!=null).length<3)return;const el=$("#curSum");el.hidden=false;const ordered=y[0]<y[1]&&y[1]<y[2],gap=y[2]-y[0];
+  el.innerHTML=`<span class="eyebrow">Bilan</span><p>${!ordered?"Tes trois niveaux ne montent pas dans l'ordre. Réécoute-les : le 8 doit vraiment déborder d'énergie, le 2 presque s'éteindre.":gap<0.4?"Tes niveaux montent, mais l'écart est faible. Ose des contrastes plus forts.":"Tes trois niveaux sont bien étagés. Réécoute-les et choisis celui qui sonne le plus juste pour toi."}</p>
+   <div class="row">${[2,5,8].map((n,k)=>`<button class="btn ghost small" data-pl="${k}">Écouter ${n}/10</button>`).join("")}</div><div class="row"><span class="small">Le bon dosage pour moi :</span>${[2,5,8].map(n=>`<button class="btn small" data-dose="${n}">${n}</button>`).join("")}</div><p class="small" id="doseMsg"></p>`;
+  el.querySelectorAll("[data-pl]").forEach(b=>b.onclick=()=>playBlob(curseur.blob[+b.dataset.pl]));
+  el.querySelectorAll("[data-dose]").forEach(b=>b.onclick=()=>{const n=+b.dataset.dose;const dl=store.get("dosage",[]);dl.push(n);store.set("dosage",dl.slice(-30));addHist({type:"intention",target:"Curseur d'énergie",prox:null,dose:n});$("#doseMsg").textContent=n===2?"Noté. Attention à ne pas t'éteindre : une voix posée reste présente.":n===8?"Noté. Garde cette énergie pour les moments où tu veux entraîner les autres.":"Noté. Le 5, c'est ta voix posée : présente, sans forcer."})}
+
+/* Test à l'aveugle */
+let blind=null;
+function renderBlindIntro(){const box=$("#blind");if(!box||blind)return;const today=dayKey(new Date()),all=takes().filter(t=>t.label),old=all.filter(t=>dayKey(new Date(t.d))!==today);
+  box.innerHTML=`<h3>Test à l'aveugle</h3><p class="small">Le vrai test de l'énergie transmise : tu réécoutes tes prises dans le désordre, sans savoir laquelle est laquelle, et tu devines l'intention. Si tu la reconnais, c'est qu'elle passe. Tu peux aussi donner ton téléphone à une amie.</p>
+   <p class="small"><b class="num">${all.length}</b> prise${all.length>1?"s":""} enregistrée${all.length>1?"s":""}, dont <b class="num">${old.length}</b> d'avant aujourd'hui.${old.length<3&&all.length>=3?" Pour un vrai test, attends demain : là, tu te souviens encore de tes prises.":""}</p>
+   <div class="row"><button class="btn small" id="blindGo" ${all.length<3?"disabled":""}>Commencer le test</button></div>`;
+  $("#blindGo").onclick=startBlind}
+function startBlind(){const today=dayKey(new Date()),all=takes().filter(t=>t.label),old=all.filter(t=>dayKey(new Date(t.d))!==today),pool=(old.length>=3?old:all).slice().sort(()=>rnd(3)-1).slice(0,5);
+  const labels=[...new Set(INTENTS.map(i=>i.n).concat(all.map(t=>t.label)))];
+  blind={items:pool.map(t=>{const others=labels.filter(l=>l!==t.label).sort(()=>rnd(3)-1);const far=others.filter(l=>{const tt=all.find(x=>x.label===l),ii=INTENTS.find(i=>i.n===l);const q=tt?tt.q:ii?ii.q:null;return q&&q!==t.q});const opts=[t.label].concat((far.length>=3?far:others).slice(0,3)).sort(()=>rnd(3)-1);return{t,opts,ans:null}}),i:0};renderBlind()}
+function renderBlind(){const box=$("#blind"),B=blind;
+  if(B.i>=B.items.length){const ok=B.items.filter(x=>x.ans===x.t.label).length,pct=Math.round(ok/B.items.length*100);addHist({type:"aveugle",prox:pct});
+    box.innerHTML=`<h3>Résultat du test</h3><div class="prox"><b>${pct}<small style="font-size:1rem"> %</small></b><span class="small">${ok} intention${ok>1?"s":""} reconnue${ok>1?"s":""} sur ${B.items.length}</span></div>
+     <ul class="checks">${B.items.map(x=>`<li><span class="mark ${x.ans===x.t.label?"ok":"bad"}">${x.ans===x.t.label?"reconnue":"ratée"}</span> ${esc(x.t.label)}${x.ans!==x.t.label?` (entendu : ${esc(x.ans)})`:""}</li>`).join("")}</ul>
+     <p class="small">${pct>=80?"Ton énergie passe très bien : on entend ce que tu veux transmettre.":pct>=50?"Une bonne partie passe. Regarde les intentions ratées : ce sont elles à exagérer.":"L'intention ne s'entend pas encore assez. Travaille le sous-texte et la mise en état avant de parler."}</p>
+     <div class="row"><button class="btn small" id="blindAgain">Refaire un test</button></div>`;
+    $("#blindAgain").onclick=()=>{blind=null;renderBlindIntro()};blind=null;renderProgress();return}
+  const it=B.items[B.i];
+  box.innerHTML=`<div class="row" style="justify-content:space-between"><h3>Test à l'aveugle</h3><span class="num small">${B.i+1} / ${B.items.length}</span></div>
+   <div class="row"><button class="btn small" id="blindPlay">Écouter l'extrait</button></div><p class="small">Quelle intention entends-tu ?</p>
+   <div class="opts">${it.opts.map((o,k)=>`<button class="btn ghost" data-o="${k}">${esc(o)}</button>`).join("")}</div><p class="small" id="blindFb"></p>`;
+  $("#blindPlay").onclick=async()=>{const b=await getAudio(it.t.id);if(b)playBlob(b);else $("#blindFb").textContent="Cet extrait n'est plus sur ton téléphone."};
+  box.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{if(it.ans)return;it.ans=it.opts[+b.dataset.o];box.querySelectorAll("[data-o]").forEach(x=>{const lab=it.opts[+x.dataset.o];if(lab===it.t.label)x.classList.add("correct");else if(x===b)x.classList.add("wrong")});
+    $("#blindFb").innerHTML=`${it.ans===it.t.label?"Reconnue.":"C'était : <b>"+esc(it.t.label)+"</b>."} <button class="btn small" id="blindNext">Suivant</button>`;$("#blindNext").onclick=()=>{B.i++;renderBlind()}})}
+function renderIntent(){renderPrep();renderIx();if(!blind)renderBlindIntro();drawCompass()}
+
 /* Spontané */
 const CATS={
 "Raconte":["le pire repas que tu aies jamais mangé","une fois où tu t'es perdue","le meilleur conseil qu'on t'ait donné","un objet que tu gardes sans savoir pourquoi","ta journée idéale de A à Z","la dernière fois que tu as beaucoup ri","un voyage qui ne s'est pas passé comme prévu","un souvenir d'école très précis","un jour où tu as été fière de toi","le plus beau paysage que tu aies vu","un rêve bizarre dont tu te souviens","ton premier job"],
@@ -706,7 +984,9 @@ EX.forEach(e=>{const c=document.createElement("div");c.className="ex";c.innerHTM
 /* Progrès */
 function renderProgress(){const h=hist(),days=store.get("days",{});let n=0;const d=new Date();if(!days[dayKey(d)])d.setDate(d.getDate()-1);while(days[dayKey(d)]){n++;d.setDate(d.getDate()-1)}
   $("#streak").textContent=n+" j";$("#nbBasc").textContent=h.filter(x=>x.type==="bascule").length;$("#nbJour").textContent=h.filter(x=>x.type==="jour").length;
-  const TY={bascule:"Bascule",shadow:"Shadowing",spontane:"Spontané",jour:"Voix du jour",note:"Ma note"};
+  const ints=h.filter(x=>x.type==="intention"&&x.prox!=null),bl=h.filter(x=>x.type==="aveugle");$("#nbInt").textContent=ints.length;$("#blindLast").textContent=bl.length?bl[bl.length-1].prox+" %":"–";
+  $("#energyNote").textContent=(ints.length?`Énergie transmise, moyenne de tes ${Math.min(10,ints.length)} dernières prises : ${Math.round(ints.slice(-10).reduce((a,x)=>a+x.prox,0)/Math.min(10,ints.length))} %. `:"Fais un exercice dans l'onglet Intention pour suivre ton énergie transmise. ")+(bl.length?`Tests à l'aveugle : ${bl.slice(-5).map(x=>x.prox+" %").join(", ")}.`:"");
+  const TY={bascule:"Bascule",shadow:"Shadowing",spontane:"Spontané",jour:"Voix du jour",note:"Ma note",intention:"Intention",aveugle:"Test à l'aveugle"};
   $("#hist").innerHTML=h.length?h.slice().reverse().slice(0,25).map(r=>`<tr><td class="num">${new Date(r.d).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}</td><td>${TY[r.type]||r.type}</td><td>${esc(r.target||"–")}</td><td class="num">${r.type==="jour"?esc(r.nearest||"–")+(r.prox!=null?" · "+r.prox+" %":""):(r.prox!=null?r.prox+" %":"–")}</td></tr>`).join(""):`<tr><td colspan="4" class="small">Tes séances apparaîtront ici.</td></tr>`;
   if($("#progres").hidden)return;
   const cv=$("#progChart"),pts=h.filter(x=>(x.type==="bascule"||x.type==="spontane")&&x.prox!=null).slice(-30);
@@ -722,16 +1002,16 @@ function renderProgress(){const h=hist(),days=store.get("days",{});let n=0;const
 /* Onglets */
 const tabs=[...document.querySelectorAll("nav button")];
 function show(id){tabs.forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===id?"true":"false"));
-  if(id!=="note"&&tun.on)tunerStop();
-  ["voix","note","train","jour","echauf","progres"].forEach(s=>{document.getElementById(s).hidden=s!==id});
-  if(id==="voix")drawMap();if(id==="note"){renderNotePick();renderNoteEx();drawTrace()}if(id==="train"){fillTargets();renderShadow();drawWheel(wheelAngle)}if(id==="progres")renderProgress();window.scrollTo({top:0})}
+  if(id!=="note"&&tun.on)tunerStop();if(id!=="intent")stopPrep();
+  ["voix","note","intent","train","jour","echauf","progres"].forEach(s=>{document.getElementById(s).hidden=s!==id});
+  if(id==="voix"){drawMap();renderTimbre()}if(id==="intent")renderIntent();if(id==="note"){renderNotePick();renderNoteEx();drawTrace()}if(id==="train"){fillTargets();renderShadow();drawWheel(wheelAngle)}if(id==="progres")renderProgress();window.scrollTo({top:0})}
 tabs.forEach(b=>b.onclick=()=>show(b.dataset.tab));
-const redraw=()=>{if(!$("#voix").hidden)drawMap();if(!$("#train").hidden)drawWheel(wheelAngle);if(!$("#progres").hidden)renderProgress()};
+const redraw=()=>{if(!$("#voix").hidden)drawMap();if(!$("#intent").hidden)drawCompass();if(!$("#train").hidden)drawWheel(wheelAngle);if(!$("#progres").hidden)renderProgress()};
 window.addEventListener("resize",redraw);
 new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
 try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",redraw)}catch(e){}
 
-refreshAll();drawWheel(0);
+refreshAll();drawWheel(0);setTimeout(reanalyzeTimbre,600);
 })();
 </script>
 
