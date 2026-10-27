@@ -39,6 +39,8 @@ header p{color:var(--muted);margin:6px 0 0}
 nav{display:flex;gap:6px;overflow-x:auto;margin:18px 0 20px;padding-bottom:4px;scrollbar-width:none}
 nav button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 .92rem var(--body);padding:8px 14px;border-radius:999px;cursor:pointer}
 nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+nav .navlbl{flex:0 0 auto;align-self:center;font:600 .68rem var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:0 2px 0 8px}
+nav .navlbl:first-child{padding-left:0}
 button:focus-visible,select:focus-visible,input:focus-visible,label:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 h2{font-family:var(--display);font-weight:400;font-size:1.45rem;margin:0 0 6px;text-wrap:balance}
 h3{font-size:1.02rem;margin:0;font-weight:600}
@@ -166,44 +168,45 @@ details.addicon summary{cursor:pointer}
 <div class="wrap">
   <header>
     <h1>Voix posée</h1>
-    <p>Connaître tes voix, choisir la bonne, et savoir y aller quand tu veux.</p>
+    <p>Comprendre ta voix, puis apprendre à la contrôler.</p>
   </header>
 
   <nav role="tablist" aria-label="Sections">
-    <button role="tab" data-tab="voix" aria-selected="true">Mes voix</button>
-    <button role="tab" data-tab="note" aria-selected="false">Ma note</button>
-    <button role="tab" data-tab="intent" aria-selected="false">Intention</button>
-    <button role="tab" data-tab="train" aria-selected="false">Entraînement</button>
-    <button role="tab" data-tab="jour" aria-selected="false">Ma voix du jour</button>
+    <span class="navlbl">1 · Comprendre</span>
+    <button role="tab" data-tab="voix" aria-selected="true">Diagnostic</button>
+    <span class="navlbl">2 · Contrôler</span>
     <button role="tab" data-tab="echauf" aria-selected="false">Échauffement</button>
+    <button role="tab" data-tab="note" aria-selected="false">Ma note</button>
+    <button role="tab" data-tab="train" aria-selected="false">Basculer</button>
+    <button role="tab" data-tab="intent" aria-selected="false">Intention</button>
+    <button role="tab" data-tab="jour" aria-selected="false">Ma voix du jour</button>
     <button role="tab" data-tab="progres" aria-selected="false">Progrès</button>
   </nav>
 
   <section id="voix" class="stack">
     <div class="key">
-      <span class="eyebrow">Le principe</span>
-      <p>Tu n'as pas à inventer une nouvelle voix : tu en as déjà plusieurs, dont certaines te plaisent. Le travail se fait en trois temps :</p>
-      <ol>
-        <li><b>Connaître</b> chacune de tes voix : enregistre-les ci-dessous.</li>
-        <li><b>Basculer</b> dans tes voix cibles quand tu le décides (onglet Entraînement).</li>
-        <li><b>Repérer</b> quand une voix t'échappe (onglet Ma voix du jour).</li>
-      </ol>
+      <span class="eyebrow">Étape 1 · Comprendre ta voix</span>
+      <p>Tu n'as pas à inventer une nouvelle voix : tu en as déjà plusieurs. Enregistre chacune une fois, 30 secondes. L'appli compare leur hauteur, leur mélodie, leurs fins de phrase et leur timbre, et te dit ce qui les distingue.</p>
+      <p>Ensuite, l'étape 2 (Contrôler) t'apprend à <b>poser ta note</b>, à <b>basculer</b> dans tes voix cibles quand tu le décides, et à <b>repérer</b> quand une voix t'échappe.</p>
+      <p id="diagCount" style="font-weight:600"></p>
+    </div>
+    <div><h2>Tes voix</h2><p class="lead">Touche une voix pour l'enregistrer, la réécouter ou changer son rôle.</p></div>
+    <div class="stack" id="voiceList"></div>
+    <div class="panel stack">
+      <h3>Ajouter une voix</h3>
+      <div class="row"><input type="text" id="newVoiceName" placeholder="Ex. voix au téléphone" aria-label="Nom de la nouvelle voix"><button class="btn small" id="addVoice">Ajouter</button></div>
+    </div>
+    <div><h2>Ton diagnostic</h2><p class="lead">Il se met à jour à chaque nouvel enregistrement.</p></div>
+    <div class="panel stack">
+      <h3>Ce que disent tes voix</h3>
+      <ul class="insights" id="insights"></ul>
     </div>
     <div class="panel stack">
       <div><h3>La carte de tes voix</h3><p class="small">Plus un point est à gauche, plus la voix est grave. Plus il est haut, plus elle est assurée (fins de phrase qui descendent et vrais silences).</p></div>
       <canvas class="map" id="map" aria-label="Carte des voix"></canvas>
       <div class="legend"><span><i style="background:var(--good)"></i>Cible</span><span><i style="background:var(--accent)"></i>À garder</span><span><i style="background:var(--warm)"></i>À apaiser</span><span><i style="background:var(--ink)"></i>Modèle</span></div>
     </div>
-    <div class="panel stack">
-      <h3>Ce que disent tes voix</h3>
-      <ul class="insights" id="insights"></ul>
-    </div>
     <div class="panel stack"><h3>Le timbre de tes voix</h3><div class="stack" id="timbreBox"></div></div>
-    <div class="stack" id="voiceList"></div>
-    <div class="panel stack">
-      <h3>Ajouter une voix</h3>
-      <div class="row"><input type="text" id="newVoiceName" placeholder="Ex. voix au téléphone" aria-label="Nom de la nouvelle voix"><button class="btn small" id="addVoice">Ajouter</button></div>
-    </div>
   </section>
 
   <section id="note" class="stack" hidden>
@@ -305,6 +308,12 @@ details.addicon summary{cursor:pointer}
     <div class="panel stack"><h3>Énergie transmise</h3><p class="small" id="energyNote"></p></div>
     <div class="panel stack"><h3>Proximité avec la voix cible</h3><canvas class="pitch" id="progChart" aria-label="Courbe de progression"></canvas><p class="small" id="progNote"></p></div>
     <div class="panel stack"><h3>Historique</h3><div class="tablebox"><table><thead><tr><th>Date</th><th>Exercice</th><th>Cible</th><th>Résultat</th></tr></thead><tbody id="hist"></tbody></table></div></div>
+    <div class="panel stack">
+      <h3>Sauvegarde</h3>
+      <p class="small">Tes voix et ton historique sont rangés dans ce navigateur, sur ce téléphone uniquement. Sur iPhone, ajoute l'appli à l'écran d'accueil (Partager → « Sur l'écran d'accueil ») pour que Safari ne les efface pas, et fais une sauvegarde de temps en temps.</p>
+      <div class="row"><button class="btn small" id="exportBtn">Sauvegarder mes données</button><label class="btn ghost small filebtn">Restaurer une sauvegarde<input type="file" id="importIn" accept=".json,application/json"></label></div>
+      <p class="small" id="backupMsg"></p>
+    </div>
   </section>
 </div>
 
@@ -467,7 +476,7 @@ function insights(){const vs=recorded(),out=[];
   if(all.length>=3){const r=st(Math.max(...all),Math.min(...all));out.push(`Entre ta voix la plus grave et la plus aiguë, il y a ${r.toFixed(1)} demi-tons. ${r>4?"C'est un grand écart : c'est ce qui donne l'impression d'une voix que tu ne contrôles pas.":"Tes voix restent assez proches en hauteur : la différence se joue surtout sur le rythme et les fins de phrase."}`)}
   const an=anchor();if(an!=null){const lst=vs.filter(v=>v.role!=="modele").map(v=>({n:v.name,d:st(v.stats.median,hzOf(an))})).sort((x,y)=>x.d-y.d);
     out.push(`Par rapport à ta note (${noteName(an)}) : ${lst.map(x=>`${esc(x.n)} ${x.d>=0?"+":"−"}${Math.abs(x.d).toFixed(1)}`).join(", ")} demi-tons. Au-delà de +2, c'est là que ta voix s'envole.`)}
-  if(!targets.length)out.push("Choisis au moins une voix comme « Cible » : c'est elle que tu travailleras dans l'onglet Entraînement.");
+  if(!targets.length)out.push("Choisis au moins une voix comme « Cible » : c'est elle que tu travailleras dans l'onglet Basculer.");
   $("#insights").innerHTML=out.map(t=>`<li>${t}</li>`).join("")}
 
 function renderVoices(){const vs=voices(),list=$("#voiceList");list.innerHTML="";
@@ -489,7 +498,7 @@ function renderVoices(){const vs=voices(),list=$("#voiceList");list.innerHTML=""
       if(!res.median){msg.textContent="Je n'ai pas entendu de voix. Rapproche-toi du micro et recommence.";msg.className="err";return}
       const all=voices(),x=all.find(y=>y.id===v.id);x.stats=statsOf(res);x.segs=res.segInfo.filter(g=>g.e-g.s>=0.5).map(g=>({s:+g.s.toFixed(2),e:+g.e.toFixed(2),med:g.med?Math.round(g.med):null,dir:g.dir}));saveVoices(all);await putAudio(v.id,blob);refreshAll(v.id)})});
 }
-function refreshAll(openId){renderVoices();renderTimbre();if(openId){const el=[...$("#voiceList").children].find(x=>x.dataset.id===openId);if(el)el.open=true}drawMap();insights();fillTargets();renderShadow();renderProgress()}
+function refreshAll(openId){renderVoices();diagCount();renderTimbre();if(openId){const el=[...$("#voiceList").children].find(x=>x.dataset.id===openId);if(el)el.open=true}drawMap();insights();fillTargets();renderShadow();renderProgress()}
 $("#addVoice").onclick=()=>{const n=$("#newVoiceName").value.trim();if(!n)return;const all=voices();const id="v"+Date.now();all.push({id,name:n,role:"garder",prompt:"Enregistre cette voix pendant 30 secondes.",stats:null});saveVoices(all);$("#newVoiceName").value="";refreshAll(id)};
 
 /* Enregistreur */
@@ -993,7 +1002,7 @@ function renderProgress(){const h=hist(),days=store.get("days",{});let n=0;const
   const dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,H=150;cv.width=w*dpr;cv.height=H*dpr;const c=cv.getContext("2d");c.scale(dpr,dpr);c.clearRect(0,0,w,H);
   const pl=34,pr=10,pt=8,pb=10,Y=v=>pt+(H-pt-pb)*(1-v/100),X=i=>pl+(w-pl-pr)*(pts.length>1?i/(pts.length-1):0.5);
   c.font="11px "+css("--body");c.fillStyle=css("--muted");c.strokeStyle=css("--line");c.lineWidth=1;[0,50,100].forEach(v=>{c.beginPath();c.moveTo(pl,Y(v));c.lineTo(w-pr,Y(v));c.stroke();c.fillText(v+" %",0,Y(v)+4)});
-  if(!pts.length){$("#progNote").textContent="Fais une bascule dans l'onglet Entraînement pour voir ta courbe.";return}
+  if(!pts.length){$("#progNote").textContent="Fais une bascule dans l'onglet Basculer pour voir ta courbe.";return}
   c.strokeStyle=css("--accent");c.lineWidth=2;c.beginPath();pts.forEach((p,i)=>{i?c.lineTo(X(i),Y(p.prox)):c.moveTo(X(i),Y(p.prox))});c.stroke();
   c.fillStyle=css("--accent");pts.forEach((p,i)=>{c.beginPath();c.arc(X(i),Y(p.prox),3,0,7);c.fill()});
   const avg=x=>Math.round(x.reduce((s,p)=>s+p.prox,0)/x.length);
@@ -1010,6 +1019,34 @@ const redraw=()=>{if(!$("#voix").hidden)drawMap();if(!$("#intent").hidden)drawCo
 window.addEventListener("resize",redraw);
 new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
 try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",redraw)}catch(e){}
+
+/* Diagnostic : où en est l'enregistrement des voix */
+function diagCount(){const vs=voices(),n=vs.filter(v=>v.stats&&v.stats.median).length;
+  $("#diagCount").textContent=n===vs.length?`Tes ${n} voix sont enregistrées : ton diagnostic est complet.`:`${n} voix enregistrée${n>1?"s":""} sur ${vs.length}.${n<2?" Il en faut au moins deux pour que l'appli les compare.":""}`}
+
+/* Sauvegarde : tout ce qui est rangé dans ce navigateur, audio compris */
+const blobToUrl=b=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=ko;r.readAsDataURL(b)});
+async function allAudio(){const d=await db();if(!d)return{};const keys=await new Promise(ok=>{try{const r=d.transaction("audio").objectStore("audio").getAllKeys();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>ok([])}catch(e){ok([])}});
+  const out={};for(const k of keys){const b=await getAudio(k);if(b)out[k]=await blobToUrl(b)}return out}
+$("#exportBtn").onclick=async()=>{const msg=$("#backupMsg");msg.className="small";msg.textContent="Préparation de la sauvegarde…";
+  try{const ls={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("vp2."))ls[k]=localStorage.getItem(k)}
+    const data={app:"voix-posee",v:1,date:new Date().toISOString(),ls,audio:await allAudio()};
+    const name="voix-posee-sauvegarde-"+dayKey(new Date())+".json",file=new File([JSON.stringify(data)],name,{type:"application/json"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:"Sauvegarde Voix posée"});msg.textContent="Sauvegarde prête. Range-la dans Fichiers ou envoie-la-toi par mail.";return}catch(e){if(e&&e.name==="AbortError"){msg.textContent="";return}}}
+    const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();
+    msg.textContent=`Sauvegarde téléchargée : ${name}.`}
+  catch(e){msg.className="err";msg.textContent="La sauvegarde n'a pas pu être créée."}};
+$("#importIn").onchange=async()=>{const f=$("#importIn").files&&$("#importIn").files[0],msg=$("#backupMsg");$("#importIn").value="";if(!f)return;
+  let data;try{data=JSON.parse(await f.text());if(data.app!=="voix-posee"||!data.ls)throw 0}catch(e){msg.className="err";msg.textContent="Ce fichier n'est pas une sauvegarde de Voix posée.";return}
+  const nv=(()=>{try{return JSON.parse(data.ls["vp2.voices"]||"[]").filter(v=>v.stats&&v.stats.median).length}catch(e){return 0}})();
+  msg.className="small";msg.innerHTML=`Sauvegarde du ${new Date(data.date).toLocaleDateString("fr-FR")} : ${nv} voix enregistrée${nv>1?"s":""}, ${Object.keys(data.audio||{}).length} audio. Elle remplacera les données actuelles. <button class="btn small" id="importGo">Restaurer</button>`;
+  $("#importGo").onclick=async()=>{msg.textContent="Restauration…";
+    try{Object.keys(localStorage).filter(k=>k.startsWith("vp2.")).forEach(k=>localStorage.removeItem(k));Object.entries(data.ls).forEach(([k,v])=>localStorage.setItem(k,v));
+      const d=await db();
+      for(const [k,u] of Object.entries(data.audio||{})){const b=await (await fetch(u)).blob();if(d)await new Promise(ok=>{try{const tx=d.transaction("audio","readwrite");tx.objectStore("audio").put(b,k);tx.oncomplete=ok;tx.onerror=ok;tx.onabort=ok}catch(e){ok()}})}
+      location.reload()}
+    catch(e){msg.className="err";msg.textContent="La restauration a échoué."}}};
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 
 refreshAll();drawWheel(0);setTimeout(reanalyzeTimbre,600);
 })();
