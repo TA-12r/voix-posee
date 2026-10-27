@@ -257,8 +257,8 @@ details.addicon summary{cursor:pointer}
     </div>
     <div class="panel step">
       <span class="stepnum">3 · Spontané</span>
-      <h3>Improvise en gardant ta voix</h3>
-      <p class="small">Tire un sujet et parle sans préparer. Le défi : rester dans ta voix cible même quand tu réfléchis.</p>
+      <h3>Improvise et argumente</h3>
+      <p class="small">Tire un sujet et parle sans préparer. L'appli note ton éloquence (hésitations, blocages, tics de langage, structure de ton argumentation) et ta voix.</p>
       <div class="wheelbox"><div class="pointer"></div><canvas id="wheel" width="560" height="560" aria-label="Roue des sujets"></canvas></div>
       <div class="row" style="justify-content:center"><button class="btn warm" id="spinBtn">Lancer la roue</button></div>
       <span class="eyebrow" id="promptCat">Exemple</span>
@@ -272,6 +272,7 @@ details.addicon summary{cursor:pointer}
       </div>
       <div class="ring" id="ring">1:00</div>
       <div class="row" style="justify-content:center"><button class="btn" id="talkBtn">Parler</button></div>
+      <label class="small row" style="gap:8px;align-items:flex-start"><input type="checkbox" id="transcribeChk" style="margin-top:3px"><span>Transcrire mes mots pour compter les tics (« du coup », « en fait »…) et analyser mon argumentation. La reconnaissance vocale du navigateur envoie l'audio à Apple ou Google.</span></label>
       <p class="small" id="talkMsg"></p>
       <div class="stack" id="resSpont" hidden></div>
     </div>
@@ -385,9 +386,13 @@ function analyze(buf){
   {const dbs=[];for(let f=0;f<frames;f++)if(sp[f]&&rms[f]>0)dbs.push(20*Math.log10(rms[f]));if(dbs.length>10){dbs.sort((a,b)=>a-b);vol=dbs[Math.floor(dbs.length/2)];dyn=dbs[Math.floor(dbs.length*.9)]-dbs[Math.floor(dbs.length*.1)]}}
   const hz=pitch.map(p=>p[1]).sort((a,b)=>a-b),pq=p=>hz[Math.floor(p*(hz.length-1))];
   const real=pauseList.filter(d=>d>=0.8).length;
+  // « euh » : voyelle tenue au moins 0,36 s sur une hauteur quasi fixe
+  let hes=0;{let run=[];const flush=()=>{if(run.length>=18){const m=run.map(p=>12*Math.log2(p[1])),mu=m.reduce((a,b)=>a+b,0)/m.length,sd=Math.sqrt(m.reduce((a,b)=>a+(b-mu)*(b-mu),0)/m.length);if(sd<0.45&&Math.max(...m)-Math.min(...m)<1.6)hes++}run=[]};
+    pitch.forEach(p=>{if(run.length&&p[3]!==run[run.length-1][3]+1)flush();run.push(p)});flush()}
   return{duration:x.length/sr0,span,longest,pitch,segInfo,
     median:hz.length?pq(.5):null,spread:hz.length>10?12*Math.log2(pq(.9)/pq(.1)):null,
-    syl:talk>2?syl/talk:null,rppm:span>8?real/(span/60):null,fall:nEnd?falls/nEnd*100:null,bright,hnr,grain,vol,dyn}}
+    syl:talk>2?syl/talk:null,rppm:span>8?real/(span/60):null,fall:nEnd?falls/nEnd*100:null,bright,hnr,grain,vol,dyn,
+    hes,blocks:pauseList.filter(d=>d>=2.5).length,onset:first>=0?first*0.02:null}}
 function fft(re,im){const n=re.length;for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b>>=1)j^=b;j^=b;if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]]}}
   for(let len=2;len<=n;len<<=1){const a=-2*Math.PI/len,wr=Math.cos(a),wi=Math.sin(a);for(let i=0;i<n;i+=len){let cr=1,ci=0;for(let j=0;j<len/2;j++){const k=i+j,l=k+len/2,tr=re[l]*cr-im[l]*ci,ti=re[l]*ci+im[l]*cr;re[l]=re[k]-tr;im[l]=im[k]-ti;re[k]+=tr;im[k]+=ti;const nr=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=nr}}}}
 function statsOf(r){const f=(v,d)=>v==null?null:+v.toFixed(d);return{median:r.median?Math.round(r.median):null,spread:f(r.spread,1),syl:f(r.syl,1),rppm:f(r.rppm,1),longest:f(r.longest,1),fall:r.fall==null?null:Math.round(r.fall),dur:f(r.span,1),bright:r.bright==null?null:Math.round(r.bright),hnr:f(r.hnr,1),grain:f(r.grain,1),vol:f(r.vol,1),dyn:f(r.dyn,1)}}
@@ -942,17 +947,56 @@ $("#spinBtn").onclick=()=>{if(spinning)return;spinning=true;$("#spinBtn").disabl
     if(p<1)requestAnimationFrame(f);else{spinning=false;$("#spinBtn").disabled=false;setPrompt(CAT_NAMES[idx])}})(t0)};
 document.querySelectorAll("[data-dur]").forEach(b=>b.onclick=()=>{curDur=+b.dataset.dur;document.querySelectorAll("[data-dur]").forEach(x=>x.className="btn small"+(x===b?"":" ghost"));if(!talkTi)$("#ring").textContent=fmt(curDur)});
 const bars=list=>`<div class="bars">${list.map((x,i)=>`<div class="bar ${i===0?"top":""}"><span>${esc(x.v.name)}</span><span class="track"><span class="fill" style="width:${x.c.prox}%"></span></span><span class="num">${x.c.prox}%</span></div>`).join("")}</div>`;
+/* Éloquence : transcription facultative + mesures du son */
+let reco=null,recoText="",recoDone=null,recoPending=null,recoFail=null;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+$("#transcribeChk").checked=!!store.get("transcribe",false);
+$("#transcribeChk").onchange=e=>{store.set("transcribe",e.target.checked);if(e.target.checked&&!SR)$("#talkMsg").textContent="Ce navigateur ne sait pas transcrire : seules les mesures du son seront faites."};
+function recoStart(){recoText="";recoFail=null;recoPending=null;if(!SR||!store.get("transcribe",false))return false;
+  try{reco=new SR();reco.lang="fr-FR";reco.continuous=true;reco.interimResults=false;reco.keep=true;
+    reco.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)recoText+=" "+e.results[i][0].transcript};
+    reco.onerror=e=>{if(e.error!=="no-speech"&&e.error!=="aborted")recoFail=e.error};
+    const r=reco;recoDone=new Promise(ok=>{r.onend=()=>{if(r.keep&&!recoFail){try{r.start();return}catch(x){}}ok()}});
+    reco.start();return true}catch(e){recoFail="start";return false}}
+function recoStop(){if(!reco)return Promise.resolve();reco.keep=false;try{reco.stop()}catch(x){}const p=Promise.race([recoDone,new Promise(r=>setTimeout(r,2500))]);reco=null;return p}
+const norm=s=>" "+s.toLowerCase().replace(/[’`]/g,"'").replace(/[^a-zà-ÿœæç' ]+/g," ").replace(/\s+/g," ").trim()+" ";
+const countIn=(t,w)=>t.split(" "+w+" ").length-1;
+const TICS=["euh","heu","bah","ben","du coup","en fait","genre","voilà","tu vois","en gros","je veux dire","style","quoi"];
+const STRUCT=[["Position","je pense|à mon avis|pour moi|selon moi|je trouve|je suis convaincue|je crois|je défends|il faut"],["Arguments","parce que|car|d'abord|premièrement|ensuite|deuxièmement|en plus|de plus|d'ailleurs|surtout|sans compter"],["Exemple","par exemple|comme quand|la preuve|regarde|prenons|imagine"],["Conclusion","donc|bref|en conclusion|finalement|c'est pour ça|pour conclure|au final|voilà pourquoi"]];
+function eloquence(res,text,topic){const min=Math.max(res.span,1)/60,hpm=res.hes/min,lines=[],sc=[],mk=(ok,lbl,txt)=>`<li><span class="mark ${ok>=2?"ok":ok===1?"mid":"bad"}">${lbl}</span> ${txt}</li>`;
+  const sH=Math.max(0,Math.min(1,1-(hpm-2)/8));sc.push(sH);
+  lines.push(mk(hpm<=2?2:hpm<=5?1:0,hpm<=2?"fluide":hpm<=5?"correct":"à travailler",`<b>Hésitations (« euh », voyelles traînées)</b> : ${res.hes}, soit ${hpm.toFixed(1).replace('.',',')} par minute. Estimation à partir du son.`));
+  const sB=res.blocks===0?1:res.blocks===1?0.6:0.2;sc.push(sB);
+  lines.push(mk(res.blocks===0?2:res.blocks===1?1:0,res.blocks===0?"aucun":res.blocks+" blocage"+(res.blocks>1?"s":""),`<b>Blocages</b> : silences de plus de 2,5 s. ${res.blocks?"Quand tu bloques, relance avec « Et surtout… » ou « Par exemple… ».":"Tu as tenu le fil."}`));
+  if(res.onset!=null)lines.push(mk(res.onset<=1.5?2:res.onset<=3?1:0,res.onset<=1.5?"rapide":res.onset<=3?"correct":"lent",`<b>Démarrage</b> : tu as commencé à parler ${res.onset.toFixed(1).replace('.',',')} s après le début de l'enregistrement.`));
+  let tx="",words=0,tics=[],st=[];
+  if(text&&text.trim()){const t=norm(text);words=t.trim().split(" ").length;
+    tics=TICS.map(w=>[w,countIn(t,w)]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);const nT=tics.reduce((a,x)=>a+x[1],0),tpm=nT/min;
+    sc.push(Math.max(0,Math.min(1,1-(tpm-1)/6)));
+    lines.push(mk(tpm<=1?2:tpm<=4?1:0,tpm<=1?"très peu":tpm<=4?"quelques-uns":"nombreux",`<b>Tics de langage</b> : ${nT} (${tpm.toFixed(1).replace('.',',')}/min)${tics.length?" : "+tics.slice(0,5).map(x=>`« ${x[0]} » ×${x[1]}`).join(", "):""}. La transcription oublie souvent les « euh », d'où la mesure du son au-dessus.`));
+    st=STRUCT.map(([n,ws])=>[n,ws.split("|").some(w=>countIn(t,w)>0)]);const nS=st.filter(x=>x[1]).length;sc.push(nS/4);
+    lines.push(mk(nS>=3?2:nS===2?1:0,nS+" / 4",`<b>Structure</b> : ${st.map(([n,ok])=>(ok?"✓ ":"✗ ")+n).join(" · ")}. ${nS>=3?"Ton argumentation est construite.":"Vise : « Je pense que… parce que… par exemple… donc… »."}`));
+    tx=`<details><summary class="small">Ce que j'ai compris (${words} mots)</summary><p class="small" style="margin-top:6px">${esc(text.trim())}</p></details>
+    <div class="row"><button class="btn ghost small" data-copy>Copier pour demander l'avis de Claude</button><span class="small" data-cmsg></span></div>`}
+  else lines.push(`<li class="small">${store.get("transcribe",false)?(recoFail?"La transcription n'a pas marché ("+esc(recoFail)+"). Seules les mesures du son sont faites.":"Je n'ai rien pu transcrire cette fois."):"Coche « Transcrire mes mots » pour compter aussi les tics et analyser ta structure."}</li>`);
+  const score=Math.round(sc.reduce((a,b)=>a+b,0)/sc.length*100);
+  const tip=hpm>5?"Remplace chaque « euh » par un silence : ferme la bouche, respire, puis reprends.":res.blocks>1?"Quand tu bloques, annonce la suite : « Et il y a autre chose… ». Ça te laisse le temps de penser.":tics.length&&tics[0][1]>=3?`Ton tic principal est « ${tics[0][0]} ». À la prochaine prise, chasse-le : silence à la place.`:st.length&&st.filter(x=>x[1]).length<3?"Construis : une position, un argument, un exemple, une conclusion.":"Très bien. Refais-le en 1 min 30 pour tenir plus longtemps.";
+  return{score,html:`<div class="stack" data-elo><div class="prox"><b>${score}<small style="font-size:1rem"> %</small></b><span class="small">d'éloquence</span></div><div class="prio"><span class="eyebrow">Pour la prochaine prise</span><p>${tip}</p></div><ul class="checks">${lines.join("")}</ul>${tx}<span class="eyebrow" style="margin-top:6px">Et ta voix</span></div>`,
+    copy:`Sujet improvisé : ${topic}\nVoici ma réponse orale, transcrite automatiquement (sans ponctuation) :\n« ${(text||"").trim()} »\n\nDonne-moi un avis court et franc sur mon éloquence : position claire, qualité des arguments, exemple, conclusion, capacité à rebondir, tics de langage. Puis 3 conseils concrets pour la prochaine fois.`}}
 const srec=makeRecorder(document.createElement("div"),{},async(res,blob,msg)=>{const el=$("#resSpont");
+  const text=recoPending?(await recoPending,recoText):"";
   if(!res.median){$("#talkMsg").textContent="Je n'ai pas entendu de voix.";return}
   const t=targetVoice(),mine=statsOf(res),list=recorded().filter(v=>v.role!=="modele").map(v=>({v,c:compare(mine,v.stats)})).filter(x=>x.c.prox!=null).sort((a,b)=>b.c.prox-a.c.prox);
   const extra=list.length?`<div class="stack"><span class="eyebrow">Tu ressemblais le plus à</span>${bars(list)}</div>`:"";
   if(t){const tb=await getAudio(t.id);const c=resultBlock(el,res,blob,t.stats,t.name,tb?()=>playBlob(tb,...firstSeg(t)):null,extra);addHist({type:"spontane",target:t.name,prox:c.prox,nearest:list[0]?list[0].v.name:null})}
-  else{el.hidden=false;el.innerHTML=extra||"<p class='small'>Enregistre tes voix pour voir à laquelle tu ressembles.</p>"}});
+  else{el.hidden=false;el.innerHTML=extra||"<p class='small'>Enregistre tes voix pour voir à laquelle tu ressembles.</p>"}
+  const E=eloquence(res,text,$("#promptText").textContent);el.insertAdjacentHTML("afterbegin",E.html);addHist({type:"eloquence",target:$("#promptCat").textContent,prox:E.score});
+  const cb=el.querySelector("[data-copy]");if(cb)cb.onclick=async()=>{const m=el.querySelector("[data-cmsg]");try{await navigator.clipboard.writeText(E.copy);m.textContent="Copié. Colle-le dans une conversation avec Claude."}catch(e){m.textContent="Copie impossible ici : sélectionne le texte à la main."}}});
 $("#talkBtn").onclick=async()=>{
-  if(talkTi){clearInterval(talkTi);talkTi=null;if(srec.recording())srec.stop();$("#talkBtn").textContent="Parler";$("#ring").textContent="Terminé";return}
-  const ok=await srec.start();$("#talkMsg").textContent=ok?"":srec.msg.textContent+" Le chrono tourne quand même.";
+  if(talkTi){clearInterval(talkTi);talkTi=null;recoPending=recoStop();if(srec.recording())srec.stop();$("#talkBtn").textContent="Parler";$("#ring").textContent="Terminé";return}
+  $("#resSpont").hidden=true;const ok=await srec.start();$("#talkMsg").textContent=ok?"":srec.msg.textContent+" Le chrono tourne quand même.";if(ok)recoStart();
   let left=curDur;$("#talkBtn").textContent="Stop";$("#ring").textContent=fmt(left);
-  talkTi=setInterval(()=>{left--;$("#ring").textContent=fmt(left);if(left<=0){clearInterval(talkTi);talkTi=null;if(srec.recording())srec.stop();$("#talkBtn").textContent="Parler";$("#ring").textContent="Terminé"}},1000)};
+  talkTi=setInterval(()=>{left--;$("#ring").textContent=fmt(left);if(left<=0){clearInterval(talkTi);talkTi=null;recoPending=recoStop();if(srec.recording())srec.stop();$("#talkBtn").textContent="Parler";$("#ring").textContent="Terminé"}},1000)};
 
 /* Ma voix du jour */
 makeRecorder($("#recJour"),{label:"Parler 30 s"},async(res,blob,msg)=>{
@@ -999,7 +1043,7 @@ function renderProgress(){const h=hist(),days=store.get("days",{});let n=0;const
   $("#streak").textContent=n+" j";$("#nbBasc").textContent=h.filter(x=>x.type==="bascule").length;$("#nbJour").textContent=h.filter(x=>x.type==="jour").length;
   const ints=h.filter(x=>x.type==="intention"&&x.prox!=null),bl=h.filter(x=>x.type==="aveugle");$("#nbInt").textContent=ints.length;$("#blindLast").textContent=bl.length?bl[bl.length-1].prox+" %":"–";
   $("#energyNote").textContent=(ints.length?`Énergie transmise, moyenne de tes ${Math.min(10,ints.length)} dernières prises : ${Math.round(ints.slice(-10).reduce((a,x)=>a+x.prox,0)/Math.min(10,ints.length))} %. `:"Fais un exercice dans l'onglet Intention pour suivre ton énergie transmise. ")+(bl.length?`Tests à l'aveugle : ${bl.slice(-5).map(x=>x.prox+" %").join(", ")}.`:"");
-  const TY={bascule:"Bascule",shadow:"Shadowing",spontane:"Spontané",jour:"Voix du jour",note:"Ma note",intention:"Intention",aveugle:"Test à l'aveugle"};
+  const TY={bascule:"Bascule",shadow:"Shadowing",spontane:"Spontané",jour:"Voix du jour",note:"Ma note",intention:"Intention",aveugle:"Test à l'aveugle",eloquence:"Éloquence"};
   $("#hist").innerHTML=h.length?h.slice().reverse().slice(0,25).map(r=>`<tr><td class="num">${new Date(r.d).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}</td><td>${TY[r.type]||r.type}</td><td>${esc(r.target||"–")}</td><td class="num">${r.type==="jour"?esc(r.nearest||"–")+(r.prox!=null?" · "+r.prox+" %":""):(r.prox!=null?r.prox+" %":"–")}</td></tr>`).join(""):`<tr><td colspan="4" class="small">Tes séances apparaîtront ici.</td></tr>`;
   if($("#progres").hidden)return;
   const cv=$("#progChart"),pts=h.filter(x=>(x.type==="bascule"||x.type==="spontane")&&x.prox!=null).slice(-30);
