@@ -545,8 +545,9 @@ function hist(){return store.get("hist",[])}
 function addHist(e){const h=hist();h.push({d:new Date().toISOString(),...e});store.set("hist",h.slice(-200));const days=store.get("days",{});days[dayKey(new Date())]=1;store.set("days",days);renderProgress()}
 
 /* Entraînement */
-function targetVoice(){const vs=recorded().filter(v=>v.role!=="modele");const id=store.get("target",null);return vs.find(v=>v.id===id)||vs.find(v=>v.role==="cible")||vs[0]||null}
-function fillTargets(){const sel=$("#targetSel"),vs=recorded().filter(v=>v.role!=="modele"),t=targetVoice();
+const targetList=()=>{const vs=recorded();return vs.filter(v=>v.role!=="modele").concat(vs.filter(v=>v.role==="modele"))};
+function targetVoice(){const vs=targetList();const id=store.get("target",null);return vs.find(v=>v.id===id)||vs.find(v=>v.role==="cible")||vs[0]||null}
+function fillTargets(){const sel=$("#targetSel"),vs=targetList(),t=targetVoice();
   sel.innerHTML=vs.length?vs.map(v=>`<option value="${v.id}" ${t&&t.id===v.id?"selected":""}>${esc(v.name)} · ${ROLES[v.role]}</option>`).join(""):`<option>Enregistre d'abord une voix dans « Mes voix »</option>`;
   sel.disabled=!vs.length;$("#playTarget").disabled=!t;
   $("#targetInfo").textContent=t?`${t.stats.median} Hz · fins qui descendent ${t.stats.fall??"–"} %`:"";
