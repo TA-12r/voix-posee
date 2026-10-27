@@ -562,7 +562,7 @@ $("#phrase").textContent=pick(PHRASES);
 
 function resultBlock(el,res,blob,ref,refName,playRef,extra){
   const mine=statsOf(res),short=res.span<10,m2={...mine};if(short)m2.rppm=null;
-  const c=compare(m2,ref);const top=c.diffs.filter(x=>Math.abs(x.d)>0.35).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
+  const c=compare(m2,ref);const top=c.diffs.filter(x=>Math.abs(x.d)>0.35&&!(x.F.k==="fall"&&x.d>0)).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
   el.hidden=false;el.innerHTML=`<div class="prox"><b>${c.prox??"–"}<small style="font-size:1rem"> %</small></b><span class="small">de proximité avec ta voix ${esc(refName)}</span></div>
   <div class="prio"><span class="eyebrow">${top.length?"À corriger en premier":"Bravo"}</span><p>${top.length?tipFor(top[0],refName):`Tu es dans ta voix ${esc(refName)}. Refais-le avec une autre phrase pour l'ancrer.`}</p></div>
   <div class="row"><button class="btn ghost small" data-me>Ma version</button>${playRef?`<button class="btn ghost small" data-ref>Ma voix ${esc(refName)}</button>`:""}</div>
