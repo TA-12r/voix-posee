@@ -477,6 +477,7 @@ function insights(){const vs=recorded(),out=[];
   const an=anchor();if(an!=null){const lst=vs.filter(v=>v.role!=="modele").map(v=>({n:v.name,d:st(v.stats.median,hzOf(an))})).sort((x,y)=>x.d-y.d);
     out.push(`Par rapport à ta note (${noteName(an)}) : ${lst.map(x=>`${esc(x.n)} ${x.d>=0?"+":"−"}${Math.abs(x.d).toFixed(1)}`).join(", ")} demi-tons. Au-delà de +2, c'est là que ta voix s'envole.`)}
   if(!targets.length)out.push("Choisis au moins une voix comme « Cible » : c'est elle que tu travailleras dans l'onglet Basculer.");
+  if(!out.length)out.push("Enregistre aussi une voix « À apaiser » (ta voix enfantine, par exemple) : l'appli te dira ce qui la distingue de tes voix cibles.");
   $("#insights").innerHTML=out.map(t=>`<li>${t}</li>`).join("")}
 
 function renderVoices(){const vs=voices(),list=$("#voiceList");list.innerHTML="";
@@ -488,10 +489,12 @@ function renderVoices(){const vs=voices(),list=$("#voiceList");list.innerHTML=""
       ${s&&s.median?`<div class="mini"><div><small>Hauteur</small><b>${s.median} Hz</b><small>${noteOf(s.median)}</small></div><div><small>Mélodie</small><b>${s.spread??"–"} dt</b></div><div><small>Vraies pauses</small><b>${s.rppm??"–"}/min</b><small>max ${s.longest??"–"} s</small></div><div><small>Fins qui descendent</small><b>${s.fall??"–"} %</b></div></div>
       ${timbreBlock(s)}<div class="row"><button class="btn ghost small" data-play>Réécouter</button></div>`:""}
       <div data-rec></div>
+      <div class="row"><input type="text" data-name value="${esc(v.name)}" aria-label="Nom de la voix"><button class="btn ghost small" data-ren>Renommer</button></div>
       <div class="row"><label class="small" for="role-${v.id}">Rôle</label><select id="role-${v.id}" data-role>${Object.keys(ROLES).map(r=>`<option value="${r}" ${r===v.role?"selected":""}>${ROLES[r]}</option>`).join("")}</select>${DEFAULT_VOICES.some(x=>x.id===v.id)?"":`<button class="btn ghost small" data-del>Supprimer</button>`}</div>
     </div>`;
     list.appendChild(d);
     const pb=d.querySelector("[data-play]");if(pb)pb.onclick=async()=>{const b=await getAudio(v.id);if(b)playBlob(b);else pb.textContent="Audio absent de cet appareil"};
+    d.querySelector("[data-ren]").onclick=()=>{const n=d.querySelector("[data-name]").value.trim();if(!n)return;const all=voices(),x=all.find(y=>y.id===v.id);x.name=n;saveVoices(all);refreshAll(v.id)};
     d.querySelector("[data-role]").onchange=e=>{const all=voices(),x=all.find(y=>y.id===v.id);x.role=e.target.value;saveVoices(all);refreshAll(v.id)};
     const del=d.querySelector("[data-del]");if(del)del.onclick=()=>{saveVoices(voices().filter(y=>y.id!==v.id));refreshAll()};
     makeRecorder(d.querySelector("[data-rec]"),{label:s?"Réenregistrer":"Enregistrer"},async(res,blob,msg)=>{
@@ -542,7 +545,7 @@ function hist(){return store.get("hist",[])}
 function addHist(e){const h=hist();h.push({d:new Date().toISOString(),...e});store.set("hist",h.slice(-200));const days=store.get("days",{});days[dayKey(new Date())]=1;store.set("days",days);renderProgress()}
 
 /* Entraînement */
-function targetVoice(){const vs=recorded().filter(v=>v.role!=="modele");const id=store.get("target",null);return vs.find(v=>v.id===id)||vs.find(v=>v.id==="mavoix")||vs.find(v=>v.role==="cible")||vs[0]||null}
+function targetVoice(){const vs=recorded().filter(v=>v.role!=="modele");const id=store.get("target",null);return vs.find(v=>v.id===id)||vs.find(v=>v.role==="cible")||vs[0]||null}
 function fillTargets(){const sel=$("#targetSel"),vs=recorded().filter(v=>v.role!=="modele"),t=targetVoice();
   sel.innerHTML=vs.length?vs.map(v=>`<option value="${v.id}" ${t&&t.id===v.id?"selected":""}>${esc(v.name)} · ${ROLES[v.role]}</option>`).join(""):`<option>Enregistre d'abord une voix dans « Mes voix »</option>`;
   sel.disabled=!vs.length;$("#playTarget").disabled=!t;
